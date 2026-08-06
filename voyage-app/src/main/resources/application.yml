@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: voyage-app
+
+  # Datasource — reads from .env via docker-compose, falls back to defaults for local dev
+  datasource:
+    url: jdbc:postgresql://localhost:5432/${POSTGRES_DB:voyage_db}
+    username: ${POSTGRES_USER:voyage}
+    password: ${POSTGRES_PASSWORD:voyage}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      # create-drop: creates schema on startup, drops on shutdown — good for learning, never in prod
+      # validate: only checks schema matches entities (prod-safe)
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

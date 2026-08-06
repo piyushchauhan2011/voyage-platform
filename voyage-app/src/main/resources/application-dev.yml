@@ -1,0 +1,8 @@
+# Dev profile — activate with: -Dspring.profiles.active=dev  or  SPRING_PROFILES_ACTIVE=dev
+# These values overlay application.yml when the dev profile is active
+spring:
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true

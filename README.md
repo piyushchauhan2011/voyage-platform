@@ -6,7 +6,7 @@ A Maven monorepo for learning backend Java and Spring Boot — structured around
 
 | Module | Stack | Purpose |
 |---|---|---|
-| [`voyage-app`](voyage-app/) | Spring Boot 4.1 · PostgreSQL · JPA | Spring fundamentals: IoC, DI, REST, JPA, bean lifecycle |
+| [`voyage-app`](voyage-app/) | Spring Boot 4.1 · PostgreSQL · JPA · Kafka · Thymeleaf | Spring fundamentals: IoC, DI, REST, JPA, bean lifecycle, async messaging |
 | [`java-mastery`](java-mastery/) | Plain Java 21 | Core Java: OOP, Collections internals, Streams & lambdas |
 
 ---
@@ -50,6 +50,9 @@ curl "http://localhost:8080/api/hotels/search?city=Tokyo"
 
 # Spring Actuator health
 curl http://localhost:8080/actuator/health
+
+# Kafka dashboard
+open http://localhost:8080/ui/kafka
 ```
 
 ### 3. Run the Java mastery demos
@@ -111,6 +114,54 @@ Key interview topics to explore next:
 - `@Transactional` propagation and isolation levels
 - `EXPLAIN ANALYZE` on your queries in pgAdmin
 
+### Kafka & async messaging
+Phase 5 is implemented as a hotel event stream:
+
+```text
+HotelService
+  |
+  | publish after create / update / delete
+  v
+hotel-events topic
+  |
+  v
+HotelEventListener (consumer group: voyage-hotel-events-ui)
+  |
+  v
+processed_hotel_events table + /ui/kafka dashboard
+```
+
+Where to study it:
+
+- `HotelService.java` — the mutation boundary where hotel create, update, and delete publish domain events after persistence succeeds.
+- `com.voyage.app.kafka.HotelEvent` — the event envelope: event id, schema version, event type, hotel data, and timestamp.
+- `HotelEventPublisher.java` — producer logic that serialises the event and sends it to Kafka using the hotel id as the message key.
+- `HotelEventListener.java` — consumer logic that reads the topic and records topic name, partition, offset, and processing time.
+- `ProcessedHotelEvent.java` — idempotent event storage showing how at-least-once delivery can still be made safe for consumers.
+- `DeadLetterHotelEvent.java` — records messages that exhausted retries and were rerouted to the dead-letter topic.
+- `/ui/kafka` — a small Thymeleaf dashboard that lets you trigger admin hotel writes and watch consumed events appear.
+- `/ui/kafka/history` — a clearer history page that separates successfully processed events from dead letters.
+
+Map the core Kafka concepts to this implementation:
+
+- `Producer`: `HotelEventPublisher` sends messages whenever hotel data changes.
+- `Topic`: `hotel-events` is the append-only log.
+- `Partition`: the hotel id is used as the Kafka message key, so events for one hotel stay ordered on the same partition.
+- `Offset`: every consumed record stores the Kafka offset in `processed_hotel_events` and the dashboard shows it.
+- `Consumer group`: the listener runs under one explicit group id, so multiple consumers could share work later.
+- `Replication`: the local compose setup is single-broker, so replication is a concept to learn here rather than a behavior you can fully observe locally.
+- `Retention`: Kafka keeps the event log for a configured period even after the app has processed it.
+- `At least once`: this app is designed around at-least-once delivery; duplicate deliveries are handled with unique event ids in the consumer store.
+- `Retries`: the listener retries failed records before giving up.
+- `Dead-letter topic`: exhausted failures are published to `hotel-events.DLT` and persisted for inspection.
+- `Exactly once`: not implemented; that would require transactional semantics and tighter producer-consumer coordination.
+
+Interview follow-ups for this phase:
+- what changes if you split one topic into separate `hotel-created`, `hotel-updated`, and `hotel-deleted` topics?
+- what breaks if the consumer crashes after processing the DB write but before committing the offset?
+- when should you use a dead-letter topic instead of retrying inline?
+- how would you evolve `HotelEvent` to schema version 2 without breaking old consumers?
+
 ### Profiles
 `application.yml` + `application-dev.yml` — base config with profile overlays.  
 `application-test.yml` (in `src/test/resources`) — swaps Postgres for H2 during tests.
@@ -158,6 +209,13 @@ Also covers `groupingBy`, `flatMap`, `mapToDouble().sum()`, and `Optional` from 
 
 ## Infrastructure reference
 
+### Kafka dashboard
+- Open `http://localhost:8080/ui/kafka`
+- Use `/api/auth/login` credentials or paste an admin bearer token into the page
+- Trigger hotel create, update, or delete operations from the dashboard
+- Watch the event feed show the topic, partition, offset, message key, and processed timestamp
+- Open `http://localhost:8080/ui/kafka/history` to inspect the full processed-event history and any dead-lettered records
+
 ### Connecting pgAdmin to Postgres
 1. Open http://localhost:5050
 2. Add server → Host: `postgres`, Port: `5432`, DB: `voyage_db`, User: `voyage`, Password: `voyage`
@@ -178,6 +236,6 @@ This repo is structured to grow with the learning plan:
 - **Phase 1 (now)** — `java-mastery`: OOP, Collections, Streams
 - **Phase 2–3 (now)** — `voyage-app`: Spring Core, REST, JPA
 - **Phase 4** — add Spring Security + JWT to `voyage-app`
-- **Phase 5** — add Kafka producer/consumer (infrastructure already running)
+- **Phase 5 (complete)** — Kafka producer/consumer + Thymeleaf event dashboard for hotel mutations
 - **Phase 6** — add Redis caching layer (infrastructure already running)
 - **Phase 7** — add `Dockerfile` per module, deploy to Kubernetes

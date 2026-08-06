@@ -31,6 +31,29 @@ fail() {
   exit 1
 }
 
+wait_for_kafka_event() {
+  local hotel_id="$1"
+  local event_type="$2"
+  local attempts=20
+  local response=""
+
+  while ((attempts > 0)); do
+    response="$(curl -sS "$BASE_URL/ui/kafka/status")"
+    if printf '%s' "$response" | jq -e --arg hotel_id "$hotel_id" --arg event_type "$event_type" '
+      map(select((.hotelId | tostring) == $hotel_id and .eventType == $event_type)) | length > 0
+    ' >/dev/null; then
+      printf '%s' "$response" | jq
+      return 0
+    fi
+    attempts=$((attempts - 1))
+    if ((attempts == 0)); then
+      printf '%s\n' "$response" | jq || true
+      fail "Timed out waiting for Kafka event $event_type for hotel $hotel_id"
+    fi
+    sleep 1
+  done
+}
+
 http_code() {
   sed -n 's/^HTTP\/[^ ]* \([0-9][0-9][0-9]\).*/\1/p' | tail -n 1
 }
@@ -129,14 +152,23 @@ CREATE_JSON="$(printf '%s' "$CREATE_RESPONSE" | json_body)"
 printf '%s' "$CREATE_JSON" | jq
 HOTEL_ID="$(printf '%s' "$CREATE_JSON" | jq -r '.id')"
 
+log "Verifying the CREATED Kafka event appears in /ui/kafka/status"
+wait_for_kafka_event "$HOTEL_ID" "CREATED"
+
 log "Updating hotel $HOTEL_ID as admin"
 UPDATE_RESPONSE="$(request PUT "/api/hotels/$HOTEL_ID" "{\"name\":\"Grand Hyatt Manual Check Updated\",\"city\":\"Tokyo\",\"pricePerNight\":260}" -H "Authorization: Bearer $ADMIN_ACCESS_TOKEN")"
 expect_status "$UPDATE_RESPONSE" "200"
 printf '%s' "$UPDATE_RESPONSE" | json_body | jq
 
+log "Verifying the UPDATED Kafka event appears in /ui/kafka/status"
+wait_for_kafka_event "$HOTEL_ID" "UPDATED"
+
 log "Deleting hotel $HOTEL_ID as admin"
 DELETE_RESPONSE="$(request DELETE "/api/hotels/$HOTEL_ID" "" -H "Authorization: Bearer $ADMIN_ACCESS_TOKEN")"
 expect_status "$DELETE_RESPONSE" "204"
+
+log "Verifying the DELETED Kafka event appears in /ui/kafka/status"
+wait_for_kafka_event "$HOTEL_ID" "DELETED"
 
 log "Refreshing the access token"
 REFRESH_RESPONSE="$(request POST "/api/auth/refresh" "{\"refreshToken\":\"$ADMIN_REFRESH_TOKEN\"}")"

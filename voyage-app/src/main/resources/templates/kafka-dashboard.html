@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voyage Kafka Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/kafka-dashboard.css}">
+</head>
+<body>
+<div class="page-shell">
+    <header class="hero">
+        <div>
+            <p class="eyebrow">Phase 5</p>
+            <h1>Kafka hotel events with a live consumer dashboard</h1>
+            <p class="hero-copy">
+                Create, update, and delete hotels through the existing JWT-secured API, then watch the consumer group
+                record offsets, partitions, and processed timestamps in real time.
+            </p>
+        </div>
+        <div class="hero-card">
+            <dl>
+                <div>
+                    <dt>Topic</dt>
+                    <dd th:text="${topicName}">hotel-events</dd>
+                </div>
+                <div>
+                    <dt>Dead-letter topic</dt>
+                    <dd th:text="${deadLetterTopicName}">hotel-events.DLT</dd>
+                </div>
+                <div>
+                    <dt>Consumer group</dt>
+                    <dd th:text="${consumerGroupId}">voyage-hotel-events-ui</dd>
+                </div>
+                <div>
+                    <dt>Delivery model</dt>
+                    <dd>At least once with idempotent event storage</dd>
+                </div>
+            </dl>
+        </div>
+    </header>
+
+    <main class="dashboard-grid">
+        <section class="panel auth-panel">
+            <div class="panel-heading">
+                <h2>Auth helper</h2>
+                <p>Log in through the existing API, or paste an admin bearer token manually.</p>
+            </div>
+
+            <form id="login-form" class="stack-form">
+                <label>
+                    Username
+                    <input type="text" name="username" placeholder="qa_user" autocomplete="username">
+                </label>
+                <label>
+                    Password
+                    <input type="password" name="password" placeholder="password123" autocomplete="current-password">
+                </label>
+                <button type="submit">Login via /api/auth/login</button>
+            </form>
+
+            <label class="token-block">
+                Active access token
+                <textarea id="token-input" rows="6" placeholder="Paste a Bearer token here for admin writes."></textarea>
+            </label>
+
+            <div id="auth-feedback" class="feedback" aria-live="polite"></div>
+        </section>
+
+        <section class="panel action-panel">
+            <div class="panel-heading">
+                <h2>Hotel mutation console</h2>
+                <p>All writes still go through the secured JSON API. The dashboard just orchestrates the requests.</p>
+            </div>
+
+            <div class="action-grid">
+                <form id="create-form" class="stack-form">
+                    <h3>Create hotel</h3>
+                    <label>Name<input type="text" name="name" required></label>
+                    <label>City<input type="text" name="city" required></label>
+                    <label>Price per night<input type="number" name="pricePerNight" min="1" step="0.01" required></label>
+                    <button type="submit">Create</button>
+                </form>
+
+                <form id="update-form" class="stack-form">
+                    <h3>Update hotel</h3>
+                    <label>Hotel ID<input type="number" name="id" min="1" required></label>
+                    <label>Name<input type="text" name="name" required></label>
+                    <label>City<input type="text" name="city" required></label>
+                    <label>Price per night<input type="number" name="pricePerNight" min="1" step="0.01" required></label>
+                    <button type="submit">Update</button>
+                </form>
+
+                <form id="delete-form" class="stack-form">
+                    <h3>Delete hotel</h3>
+                    <label>Hotel ID<input type="number" name="id" min="1" required></label>
+                    <button type="submit" class="danger-button">Delete</button>
+                </form>
+            </div>
+
+            <div id="action-feedback" class="feedback" aria-live="polite"></div>
+        </section>
+
+        <section class="panel learn-panel">
+            <div class="panel-heading">
+                <h2>Kafka concepts in this slice</h2>
+            </div>
+            <ul class="concept-list">
+                <li><strong>Partition</strong>: the message key is the hotel id, so events for one hotel stay ordered.</li>
+                <li><strong>Offset</strong>: the consumer records the broker offset for every processed message below.</li>
+                <li><strong>Consumer group</strong>: the listener runs under one named group so another consumer can share the same topic later.</li>
+                <li><strong>Retention</strong>: Kafka keeps the event log even after this consumer processes it.</li>
+                <li><strong>Replication</strong>: production clusters replicate partitions; this local compose file uses one broker, so replication stays conceptual here.</li>
+                <li><strong>At least once</strong>: duplicate deliveries are acceptable because processed event ids are stored idempotently.</li>
+                <li><strong>Exactly once</strong>: not enabled here; it would require transactional semantics across producer and consumer boundaries.</li>
+                <li><strong>Retries + DLT</strong>: exhausted failures are retried, then forwarded to the dead-letter topic for inspection.</li>
+            </ul>
+            <a class="inline-link" th:href="@{/ui/kafka/history}">Open the full event history page</a>
+        </section>
+
+        <section class="panel hotel-panel">
+            <div class="panel-heading">
+                <h2>Public hotel catalog</h2>
+                <p>The underlying read endpoint stays public at <code>/api/hotels</code>.</p>
+            </div>
+            <div id="hotel-list" class="hotel-list">
+                <article class="hotel-card" th:each="hotel : ${hotels}">
+                    <div>
+                        <p class="hotel-name" th:text="${hotel.name}">Grand Hyatt</p>
+                        <p class="hotel-meta">
+                            <span th:text="${hotel.city}">Tokyo</span>
+                            <span th:text="${hotel.pricePerNight}">220.0</span>
+                        </p>
+                    </div>
+                    <span class="pill" th:text="|#${hotel.id}|">#1</span>
+                </article>
+            </div>
+        </section>
+
+        <section class="panel event-panel">
+            <div class="panel-heading">
+                <h2>Recent consumed events</h2>
+                <p>Rendered from the processed-event table and refreshed in the browser.</p>
+            </div>
+            <div id="event-list" class="event-list">
+                <article class="event-card" th:each="event : ${recentEvents}">
+                    <div class="event-topline">
+                        <span class="pill" th:text="${event.eventType}">CREATED</span>
+                        <span th:text="|hotel #${event.hotelId}|">hotel #1</span>
+                        <span th:text="|offset ${event.kafkaOffset}|">offset 0</span>
+                    </div>
+                    <p class="event-name" th:text="${event.hotelName}">Grand Hyatt</p>
+                    <p class="event-meta"
+                       th:text="|partition ${event.partitionId} · key ${event.messageKey} · processed ${event.processedAt}|">
+                        partition 0 · key 1 · processed 2026-08-06T00:00:00Z
+                    </p>
+                </article>
+            </div>
+        </section>
+
+        <section class="panel event-panel">
+            <div class="panel-heading">
+                <h2>Recent dead letters</h2>
+                <p>Messages that exhausted retries and landed on the DLT.</p>
+            </div>
+            <div id="dead-letter-list" class="event-list">
+                <article class="event-card" th:each="event : ${recentDeadLetters}">
+                    <div class="event-topline">
+                        <span class="pill danger-pill">DLT</span>
+                        <span th:text="${event.originalTopic}">hotel-events</span>
+                        <span th:text="|offset ${event.kafkaOffset}|">offset 0</span>
+                    </div>
+                    <p class="event-name" th:text="${event.errorClassName} ?: 'Unknown failure'">IllegalStateException</p>
+                    <p class="event-meta"
+                       th:text="|${event.deadLetterTopic} · key ${event.messageKey} · dead-lettered ${event.deadLetteredAt}|">
+                        hotel-events.DLT · key 1 · dead-lettered 2026-08-06T00:00:00Z
+                    </p>
+                </article>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script th:inline="javascript">
+    window.kafkaDashboardConfig = {
+        topicName: [[${topicName}]],
+        deadLetterTopicName: [[${deadLetterTopicName}]],
+        consumerGroupId: [[${consumerGroupId}]],
+        statusUrl: [[@{/ui/kafka/status}]],
+        deadLettersUrl: [[@{/ui/kafka/dead-letters}]],
+        hotelsUrl: [[@{/api/hotels}]],
+        loginUrl: [[@{/api/auth/login}]],
+        createUrl: [[@{/api/hotels}]],
+        updateBaseUrl: [[@{/api/hotels/}]],
+        deleteBaseUrl: [[@{/api/hotels/}]]
+    };
+</script>
+<script th:src="@{/js/kafka-dashboard.js}"></script>
+</body>
+</html>

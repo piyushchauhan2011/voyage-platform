@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voyage Kafka Event History</title>
+    <link rel="stylesheet" th:href="@{/css/kafka-dashboard.css}">
+</head>
+<body>
+<div class="page-shell history-shell">
+    <header class="hero history-hero">
+        <div>
+            <p class="eyebrow">Phase 5 hardening</p>
+            <h1>Kafka event history, retries, and dead letters</h1>
+            <p class="hero-copy">
+                This page separates successful event processing from exhausted retries. Use it to reason about
+                at-least-once delivery, replay safety, and when a dead-letter topic is the right fallback.
+            </p>
+        </div>
+        <div class="hero-card">
+            <dl>
+                <div>
+                    <dt>Main topic</dt>
+                    <dd th:text="${topicName}">hotel-events</dd>
+                </div>
+                <div>
+                    <dt>Dead-letter topic</dt>
+                    <dd th:text="${deadLetterTopicName}">hotel-events.DLT</dd>
+                </div>
+                <div>
+                    <dt>Consumer group</dt>
+                    <dd th:text="${consumerGroupId}">voyage-hotel-events-ui</dd>
+                </div>
+            </dl>
+        </div>
+    </header>
+
+    <main class="history-grid">
+        <section class="panel table-panel">
+            <div class="panel-heading">
+                <h2>Processed event history</h2>
+                <p>Events that were consumed successfully after zero or more retry attempts.</p>
+            </div>
+            <div class="table-scroll">
+                <table class="history-table">
+                    <thead>
+                    <tr>
+                        <th>Processed</th>
+                        <th>Type</th>
+                        <th>Hotel</th>
+                        <th>Topic</th>
+                        <th>Partition</th>
+                        <th>Offset</th>
+                        <th>Key</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="event : ${eventHistory}">
+                        <td th:text="${event.processedAt}">2026-08-06T00:00:00Z</td>
+                        <td th:text="${event.eventType}">CREATED</td>
+                        <td th:text="|#${event.hotelId} ${event.hotelName}|">#1 Grand Hyatt</td>
+                        <td th:text="${event.topicName}">hotel-events</td>
+                        <td th:text="${event.partitionId}">0</td>
+                        <td th:text="${event.kafkaOffset}">1</td>
+                        <td th:text="${event.messageKey}">1</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel table-panel">
+            <div class="panel-heading">
+                <h2>Dead-letter history</h2>
+                <p>Messages that exhausted retries and were rerouted for later inspection.</p>
+            </div>
+            <div class="table-scroll">
+                <table class="history-table">
+                    <thead>
+                    <tr>
+                        <th>Dead-lettered</th>
+                        <th>Original topic</th>
+                        <th>DLT</th>
+                        <th>Error</th>
+                        <th>Partition</th>
+                        <th>Offset</th>
+                        <th>Payload</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="event : ${deadLetterHistory}">
+                        <td th:text="${event.deadLetteredAt}">2026-08-06T00:00:00Z</td>
+                        <td th:text="${event.originalTopic}">hotel-events</td>
+                        <td th:text="${event.deadLetterTopic}">hotel-events.DLT</td>
+                        <td th:text="${event.errorClassName} ?: ${event.errorMessage}">IllegalStateException</td>
+                        <td th:text="${event.partitionId}">0</td>
+                        <td th:text="${event.kafkaOffset}">1</td>
+                        <td><pre class="payload-preview" th:text="${event.payload}">{}</pre></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

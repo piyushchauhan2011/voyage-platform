@@ -2,6 +2,9 @@ spring:
   application:
     name: voyage-app
 
+  thymeleaf:
+    cache: false
+
   # Datasource — reads from .env via docker-compose, falls back to defaults for local dev
   datasource:
     url: jdbc:postgresql://localhost:5432/${POSTGRES_DB:voyage_db}
@@ -19,7 +22,28 @@ spring:
       hibernate:
         format_sql: true
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    listener:
+      auto-startup: true
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: ${KAFKA_GROUP_ID:voyage-hotel-events-ui}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
 application:
+  kafka:
+    enabled: true
+    retry:
+      attempts: 3
+      backoff-ms: 400
+    topic:
+      hotel-events: hotel-events
+      hotel-events-dlt: hotel-events.DLT
   security:
     jwt:
       # dev-only key — replace with a securely generated secret in production

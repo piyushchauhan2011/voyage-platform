@@ -12,3 +12,27 @@ spring:
     properties:
       hibernate:
         format_sql: false
+  thymeleaf:
+    cache: false
+  kafka:
+    bootstrap-servers: ${spring.embedded.kafka.brokers:localhost:9092}
+    listener:
+      auto-startup: false
+    consumer:
+      auto-offset-reset: earliest
+      group-id: voyage-test-consumers
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+application:
+  kafka:
+    enabled: false
+    retry:
+      attempts: 2
+      backoff-ms: 50
+    topic:
+      hotel-events: hotel-events-test
+      hotel-events-dlt: hotel-events-test.DLT

@@ -1,5 +1,8 @@
 package com.voyage.app.hotel;
 
+import com.voyage.app.kafka.HotelEventPublisher;
+import com.voyage.app.kafka.HotelEventType;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,9 +19,11 @@ import java.util.List;
 public class HotelService {
 
     private final HotelRepository hotelRepository;
+    private final HotelEventPublisher hotelEventPublisher;
 
-    public HotelService(HotelRepository hotelRepository) {
+    public HotelService(HotelRepository hotelRepository, ObjectProvider<HotelEventPublisher> hotelEventPublisherProvider) {
         this.hotelRepository = hotelRepository;
+        this.hotelEventPublisher = hotelEventPublisherProvider.getIfAvailable();
     }
 
     public List<Hotel> findAll() {
@@ -31,7 +36,9 @@ public class HotelService {
     }
 
     public Hotel save(Hotel hotel) {
-        return hotelRepository.save(hotel);
+        Hotel savedHotel = hotelRepository.save(hotel);
+        publishEvent(HotelEventType.CREATED, savedHotel);
+        return savedHotel;
     }
 
     public List<Hotel> findByCity(String city) {
@@ -43,13 +50,20 @@ public class HotelService {
         hotel.setName(updates.getName());
         hotel.setCity(updates.getCity());
         hotel.setPricePerNight(updates.getPricePerNight());
-        return hotelRepository.save(hotel);
+        Hotel updatedHotel = hotelRepository.save(hotel);
+        publishEvent(HotelEventType.UPDATED, updatedHotel);
+        return updatedHotel;
     }
 
     public void delete(Long id) {
-        if (!hotelRepository.existsById(id)) {
-            throw new HotelNotFoundException(id);
-        }
+        Hotel hotel = findById(id);
         hotelRepository.deleteById(id);
+        publishEvent(HotelEventType.DELETED, hotel);
+    }
+
+    private void publishEvent(HotelEventType eventType, Hotel hotel) {
+        if (hotelEventPublisher != null) {
+            hotelEventPublisher.publish(eventType, hotel);
+        }
     }
 }

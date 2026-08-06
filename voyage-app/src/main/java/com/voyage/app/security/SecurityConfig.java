@@ -58,6 +58,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers(HttpMethod.GET, "/ui/**", "/css/**", "/js/**").permitAll()
                 // Hotel reads are public — no account required to browse
                 .requestMatchers(HttpMethod.GET, "/api/hotels/**").permitAll()
                 // Hotel writes are restricted to admins

@@ -1,0 +1,68 @@
+package com.voyage.app.kafka;
+
+import com.voyage.app.hotel.Hotel;
+import com.voyage.app.hotel.HotelService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.kafka.test.context.EmbeddedKafka;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+
+import java.time.Duration;
+import java.time.Instant;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@SpringBootTest(properties = {
+        "application.kafka.enabled=true",
+        "spring.kafka.listener.auto-startup=true",
+        "spring.kafka.bootstrap-servers=${spring.embedded.kafka.brokers}",
+        "spring.kafka.consumer.group-id=voyage-kafka-it",
+        "application.kafka.topic.hotel-events=hotel-events-it"
+})
+@EmbeddedKafka(partitions = 1, topics = {"hotel-events-it"})
+@ActiveProfiles("test")
+@DirtiesContext
+class HotelEventFlowTest {
+
+    @Autowired HotelService hotelService;
+    @Autowired ProcessedHotelEventRepository processedHotelEventRepository;
+
+    @Test
+    void save_publishesAndConsumesHotelCreatedEvent() throws Exception {
+        Hotel savedHotel = hotelService.save(new Hotel("Kafka Test Hotel", "Berlin", 199.0));
+
+        ProcessedHotelEvent processedEvent = awaitProcessedEvent(savedHotel.getId(), HotelEventType.CREATED);
+
+        assertNotNull(processedEvent);
+        assertEquals("Kafka Test Hotel", processedEvent.getHotelName());
+        assertEquals("Berlin", processedEvent.getCity());
+        assertEquals(savedHotel.getId(), processedEvent.getHotelId());
+        assertEquals("hotel-events-it", processedEvent.getTopicName());
+        assertEquals(savedHotel.getId().toString(), processedEvent.getMessageKey());
+        assertEquals(0, processedEvent.getPartitionId());
+        assertTrue(processedEvent.getKafkaOffset() >= 0);
+        assertEquals("voyage-kafka-it", processedEvent.getConsumerGroupId());
+    }
+
+    private ProcessedHotelEvent awaitProcessedEvent(Long hotelId, HotelEventType eventType) throws Exception {
+        Instant deadline = Instant.now().plus(Duration.ofSeconds(10));
+
+        while (Instant.now().isBefore(deadline)) {
+            ProcessedHotelEvent processedEvent = processedHotelEventRepository
+                    .findFirstByHotelIdAndEventTypeOrderByProcessedAtDesc(hotelId, eventType)
+                    .orElse(null);
+
+            if (processedEvent != null) {
+                return processedEvent;
+            }
+
+            Thread.sleep(200);
+        }
+
+        throw new AssertionError("Timed out waiting for processed hotel event");
+    }
+}

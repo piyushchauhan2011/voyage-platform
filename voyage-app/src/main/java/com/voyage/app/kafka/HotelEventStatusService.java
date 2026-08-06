@@ -1,5 +1,6 @@
 package com.voyage.app.kafka;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
@@ -14,13 +15,16 @@ import java.util.List;
 public class HotelEventStatusService {
 
     private final ProcessedHotelEventRepository processedHotelEventRepository;
+    private final DeadLetterHotelEventService deadLetterHotelEventService;
     private final Clock clock;
     private final String consumerGroupId;
 
     public HotelEventStatusService(ProcessedHotelEventRepository processedHotelEventRepository,
+                                   ObjectProvider<DeadLetterHotelEventService> deadLetterHotelEventServiceProvider,
                                    Clock clock,
                                    @Value("${spring.kafka.consumer.group-id}") String consumerGroupId) {
         this.processedHotelEventRepository = processedHotelEventRepository;
+        this.deadLetterHotelEventService = deadLetterHotelEventServiceProvider.getIfAvailable();
         this.clock = clock;
         this.consumerGroupId = consumerGroupId;
     }
@@ -53,6 +57,9 @@ public class HotelEventStatusService {
 
         try {
             processedHotelEventRepository.save(processedEvent);
+            if (deadLetterHotelEventService != null) {
+                deadLetterHotelEventService.markResolvedForEventId(event.eventId());
+            }
         } catch (DataIntegrityViolationException ignored) {
             // Duplicate delivery is acceptable in at-least-once systems; the unique event id keeps storage idempotent.
         }

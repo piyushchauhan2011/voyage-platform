@@ -103,8 +103,15 @@ public class KafkaDashboardController {
                         event.getPartitionId(),
                         event.getKafkaOffset(),
                         event.getPayload(),
+                    event.getOriginalEventId(),
+                    event.getOriginalEventType() != null ? event.getOriginalEventType().name() : null,
+                    event.getOriginalHotelId(),
                         event.getErrorClassName(),
                         event.getErrorMessage(),
+                    event.getRetryStatus().name(),
+                    event.getRetryCount(),
+                    event.getLastRetriedAt(),
+                    event.getResolvedAt(),
                         event.getDeadLetteredAt()
                 ))
                 .toList();

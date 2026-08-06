@@ -2,6 +2,8 @@ package com.voyage.app.kafka;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -43,11 +45,34 @@ public class DeadLetterHotelEvent {
     @Column(nullable = false)
     private String payload;
 
+    @Column(name = "original_event_id")
+    private String originalEventId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "original_event_type")
+    private HotelEventType originalEventType;
+
+    @Column(name = "original_hotel_id")
+    private Long originalHotelId;
+
     @Column(name = "error_class_name")
     private String errorClassName;
 
     @Column(name = "error_message", length = 2000)
     private String errorMessage;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "retry_status", nullable = false)
+    private DeadLetterRetryStatus retryStatus;
+
+    @Column(name = "retry_count", nullable = false)
+    private Integer retryCount;
+
+    @Column(name = "last_retried_at")
+    private Instant lastRetriedAt;
+
+    @Column(name = "resolved_at")
+    private Instant resolvedAt;
 
     @Column(name = "dead_lettered_at", nullable = false)
     private Instant deadLetteredAt;

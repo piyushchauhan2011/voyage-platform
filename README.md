@@ -215,6 +215,22 @@ Also covers `groupingBy`, `flatMap`, `mapToDouble().sum()`, and `Optional` from 
 - Trigger hotel create, update, or delete operations from the dashboard
 - Watch the event feed show the topic, partition, offset, message key, and processed timestamp
 - Open `http://localhost:8080/ui/kafka/history` to inspect the full processed-event history and any dead-lettered records
+- Use the history page to retry dead-letter records with an admin bearer token and an optional corrected payload override
+
+### QA manual checks
+- End-to-end auth + hotel + Kafka happy path: `bash api_manual_checks/run_auth_hotel_flow.sh`
+- Kafka retries + dead-letter + replay path: `bash api_manual_checks/run_kafka_dlt_flow.sh`
+- QA user lifecycle helper: `bash api_manual_checks/manage_qa_user.sh --help`
+
+Manual QA steps for the DLT and replay flow:
+1. Start Docker and the Spring Boot app.
+2. Open `http://localhost:8080/ui/kafka/history`.
+3. Create an admin-capable QA user with `bash api_manual_checks/manage_qa_user.sh create --username qa_admin_manual --promote`.
+4. Log in as that user through `/api/auth/login` or the dashboard and keep the bearer token.
+5. Publish a malformed payload into `hotel-events`, for example `BROKEN_EVENT_MANUAL`, through `POST /api/kafka/publish-raw` as documented in `api_manual_checks/README.md`.
+6. Confirm the record appears in `/ui/kafka/dead-letters` or on the history page.
+7. Paste the admin bearer token into the history page, replace the dead-letter payload with valid `HotelEvent` JSON, and click `Retry from UI`.
+8. Confirm the replayed event appears in the processed-event history and the dead-letter row becomes `RESOLVED`.
 
 ### Connecting pgAdmin to Postgres
 1. Open http://localhost:5050

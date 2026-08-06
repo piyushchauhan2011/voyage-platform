@@ -10,8 +10,15 @@ public record DeadLetterEventView(
         Integer partitionId,
         Long kafkaOffset,
         String payload,
+        String originalEventId,
+        String originalEventType,
+        Long originalHotelId,
         String errorClassName,
         String errorMessage,
+        String retryStatus,
+        Integer retryCount,
+        Instant lastRetriedAt,
+        Instant resolvedAt,
         Instant deadLetteredAt
 ) {
 }

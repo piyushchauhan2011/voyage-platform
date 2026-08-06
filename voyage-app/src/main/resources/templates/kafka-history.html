@@ -74,6 +74,13 @@
                 <h2>Dead-letter history</h2>
                 <p>Messages that exhausted retries and were rerouted for later inspection.</p>
             </div>
+            <div class="history-retry-bar">
+                <label class="token-block compact-token-block">
+                    Admin bearer token for replay
+                    <textarea id="history-token-input" rows="4" placeholder="Paste an admin Bearer token to retry a DLT record."></textarea>
+                </label>
+                <div id="history-feedback" class="feedback" aria-live="polite"></div>
+            </div>
             <div class="table-scroll">
                 <table class="history-table">
                     <thead>
@@ -84,7 +91,9 @@
                         <th>Error</th>
                         <th>Partition</th>
                         <th>Offset</th>
+                        <th>Status</th>
                         <th>Payload</th>
+                        <th>Replay</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -95,7 +104,22 @@
                         <td th:text="${event.errorClassName} ?: ${event.errorMessage}">IllegalStateException</td>
                         <td th:text="${event.partitionId}">0</td>
                         <td th:text="${event.kafkaOffset}">1</td>
-                        <td><pre class="payload-preview" th:text="${event.payload}">{}</pre></td>
+                        <td th:text="|${event.retryStatus} (${event.retryCount})|">PENDING (0)</td>
+                        <td>
+                            <pre class="payload-preview" th:text="${event.payload}">{}</pre>
+                            <label class="payload-edit-label">
+                                Replay payload override
+                                <textarea class="retry-payload-input" rows="5" th:attr="data-dead-letter-id=${event.id}" th:text="${event.payload}">{}</textarea>
+                            </label>
+                        </td>
+                        <td>
+                            <button type="button"
+                                    class="retry-dead-letter-button"
+                                    th:attr="data-dead-letter-id=${event.id}">
+                                Retry from UI
+                            </button>
+                            <p class="event-meta" th:text="${event.resolvedAt} != null ? |resolved ${event.resolvedAt}| : (${event.lastRetriedAt} != null ? |last retried ${event.lastRetriedAt}| : 'not retried yet')">not retried yet</p>
+                        </td>
                     </tr>
                     </tbody>
                 </table>
@@ -103,5 +127,13 @@
         </section>
     </main>
 </div>
+<script th:inline="javascript">
+    window.kafkaHistoryConfig = {
+        retryBaseUrl: [[@{/api/kafka/dead-letters/}]],
+        deadLettersUrl: [[@{/ui/kafka/dead-letters}]],
+        storageKey: "voyage.kafka.accessToken"
+    };
+</script>
+<script th:src="@{/js/kafka-history.js}"></script>
 </body>
 </html>

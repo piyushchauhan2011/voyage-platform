@@ -49,4 +49,8 @@ public class HotelEventPublisher {
             throw new IllegalStateException("Failed to serialize hotel event", exception);
         }
     }
+
+    public void publishRaw(String messageKey, String payload) {
+        kafkaTemplate.send(hotelEventsTopic, messageKey, payload);
+    }
 }

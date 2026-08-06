@@ -6,6 +6,7 @@ This folder gives a new developer or tester two ways to verify the API and the P
 2. A runnable bash script that exercises the same flow end to end
 
 There is also a helper script for managing QA users outside the main end-to-end flow.
+There is now a separate Kafka hardening script focused on retries, dead-letter handling, and replay.
 
 ## Prerequisites
 
@@ -42,6 +43,8 @@ Optional but useful during Phase 5:
 - Open `http://localhost:8080/ui/kafka`
 - The page lets you log in, trigger hotel writes, and watch consumed Kafka events appear from the app-side status feed
 - Open `http://localhost:8080/ui/kafka/history` to inspect processed vs dead-lettered records separately
+- The history page now lets an admin paste a bearer token and retry dead-letter records from the UI, optionally with an edited payload
+- Admin users can also publish a raw Kafka payload through `/api/kafka/publish-raw` for deterministic DLT testing
 
 ## Security model to test
 
@@ -230,15 +233,10 @@ Expected: the feed now includes a `DELETED` event for that hotel id.
 This is useful only if you want to see retry exhaustion and dead-letter handling in action.
 
 ```bash
-docker exec -i voyage-kafka kafka-console-producer \
-  --bootstrap-server localhost:9092 \
-  --topic hotel-events
-```
-
-Paste invalid JSON such as:
-
-```text
-{not-json}
+curl -i -s -X POST "$BASE_URL/api/kafka/publish-raw" \
+  -H "Authorization: Bearer $ADMIN_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"messageKey":"broken-manual-1","payload":"BROKEN_EVENT_MANUAL"}'
 ```
 
 Then inspect:
@@ -247,7 +245,38 @@ Then inspect:
 curl -s "$BASE_URL/ui/kafka/dead-letters" | jq
 ```
 
-Expected: a new entry appears with the original topic, dead-letter topic, offset, and payload.
+Expected: a new entry appears with the original topic, dead-letter topic, offset, payload, and `retryStatus` of `PENDING`.
+
+### 9c. Retry the dead-letter record from the UI with a corrected payload
+
+1. Open `http://localhost:8080/ui/kafka/history`
+2. Paste an admin bearer token into the retry section at the top of the dead-letter table
+3. Find the dead-letter row for your malformed payload
+4. Replace the payload override text area with valid `HotelEvent` JSON, for example:
+
+```json
+{
+  "eventId": "manual-replay-1",
+  "schemaVersion": 1,
+  "eventType": "CREATED",
+  "hotelId": 900001,
+  "hotelName": "Replay Manual Check Hotel",
+  "city": "Singapore",
+  "pricePerNight": 275,
+  "occurredAt": "2026-08-06T12:00:00Z"
+}
+```
+
+5. Click `Retry from UI`
+6. Refresh the page if needed
+
+Expected result:
+
+- the processed-event history now contains the replayed event id
+- the dead-letter row shows `RETRIED`, then `RESOLVED`
+- `retryCount` increments
+
+Important detail: if you retry with another invalid payload, the message will fail again and can return to the dead-letter flow.
 
 ### 10. Refresh the access token
 
@@ -287,6 +316,38 @@ Run the script from the repo root:
 
 ```bash
 bash api_manual_checks/run_auth_hotel_flow.sh
+```
+
+## Kafka retries + DLT script
+
+If you want a dedicated scripted check for Kafka retries, the dead-letter topic, and replay resolution, run:
+
+```bash
+bash api_manual_checks/run_kafka_dlt_flow.sh
+```
+
+What this script does:
+
+- checks the app health endpoint
+- registers a fresh QA user
+- promotes that user to `ROLE_ADMIN`
+- logs in again to get an admin token
+- publishes a malformed payload into `hotel-events`
+- waits for the message to appear in `/ui/kafka/dead-letters`
+- captures the dead-letter id
+- retries that dead-letter through `/api/kafka/dead-letters/{id}/retry` with a corrected `HotelEvent` payload
+- waits for the replayed event to appear in `/ui/kafka/status`
+- waits for the dead-letter record to become `RESOLVED`
+
+Optional environment overrides:
+
+```bash
+BASE_URL=http://localhost:8080 \
+POSTGRES_CONTAINER=voyage-postgres \
+POSTGRES_USER=voyage \
+POSTGRES_DB=voyage_db \
+KAFKA_TOPIC=hotel-events \
+bash api_manual_checks/run_kafka_dlt_flow.sh
 ```
 
 ## QA user helper script

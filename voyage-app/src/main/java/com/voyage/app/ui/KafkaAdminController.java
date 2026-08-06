@@ -4,6 +4,7 @@ import com.voyage.app.kafka.DeadLetterHotelEvent;
 import com.voyage.app.kafka.DeadLetterHotelEventService;
 import com.voyage.app.kafka.HotelEventPublisher;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/kafka")
+@ConditionalOnProperty(name = "application.kafka.enabled", havingValue = "true", matchIfMissing = true)
 public class KafkaAdminController {
 
     private final DeadLetterHotelEventService deadLetterHotelEventService;

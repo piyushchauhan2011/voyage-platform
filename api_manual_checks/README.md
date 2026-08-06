@@ -7,6 +7,7 @@ This folder gives a new developer or tester two ways to verify the API and the P
 
 There is also a helper script for managing QA users outside the main end-to-end flow.
 There is now a separate Kafka hardening script focused on retries, dead-letter handling, and replay.
+There is now a separate Redis verification script focused on cache population, TTL checks, playground structures, pub/sub, and locks.
 
 ## Prerequisites
 
@@ -45,6 +46,12 @@ Optional but useful during Phase 5:
 - Open `http://localhost:8080/ui/kafka/history` to inspect processed vs dead-lettered records separately
 - The history page now lets an admin paste a bearer token and retry dead-letter records from the UI, optionally with an edited payload
 - Admin users can also publish a raw Kafka payload through `/api/kafka/publish-raw` for deterministic DLT testing
+
+Optional but useful during Phase 6:
+
+- Run `bash api_manual_checks/run_redis_flow.sh`
+- The script creates an admin-capable QA user, populates the hotel caches, verifies Redis keys through the `voyage-redis` container, and exercises the Redis playground endpoints
+- The script assumes Docker Compose is running with the default `voyage-redis` and `voyage-postgres` container names
 
 ## Security model to test
 

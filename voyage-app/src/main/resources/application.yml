@@ -2,6 +2,14 @@ spring:
   application:
     name: voyage-app
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2s
+      repositories:
+        enabled: false
+
   thymeleaf:
     cache: false
 
@@ -44,6 +52,14 @@ application:
     topic:
       hotel-events: hotel-events
       hotel-events-dlt: hotel-events.DLT
+  redis:
+    enabled: true
+    pubsub:
+      channel: voyage:notifications
+    cache:
+      ttl:
+        hotel-by-id: PT10M
+        hotels-by-city: PT5M
   security:
     jwt:
       # dev-only key — replace with a securely generated secret in production

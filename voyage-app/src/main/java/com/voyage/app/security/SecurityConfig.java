@@ -60,6 +60,7 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers(HttpMethod.GET, "/ui/**", "/css/**", "/js/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/kafka/**").hasRole("ADMIN")
+                .requestMatchers("/api/redis/**").hasRole("ADMIN")
                 // Hotel reads are public — no account required to browse
                 .requestMatchers(HttpMethod.GET, "/api/hotels/**").permitAll()
                 // Hotel writes are restricted to admins

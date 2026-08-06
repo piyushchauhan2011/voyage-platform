@@ -3,6 +3,10 @@ package com.voyage.app.hotel;
 import com.voyage.app.kafka.HotelEventPublisher;
 import com.voyage.app.kafka.HotelEventType;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,25 +30,35 @@ public class HotelService {
         this.hotelEventPublisher = hotelEventPublisherProvider.getIfAvailable();
     }
 
-    public List<Hotel> findAll() {
-        return hotelRepository.findAll();
-    }
-
+    @Cacheable(cacheNames = "hotelById", key = "#id")
     public Hotel findById(Long id) {
         return hotelRepository.findById(id)
                 .orElseThrow(() -> new HotelNotFoundException(id));
     }
 
+    @Cacheable(cacheNames = "hotelsByCity", key = "#city")
+    public List<Hotel> findByCity(String city) {
+        return hotelRepository.findByCity(city);
+    }
+
+    public List<Hotel> findAll() {
+        return hotelRepository.findAll();
+    }
+
+    @Caching(
+            put = @CachePut(cacheNames = "hotelById", key = "#result.id"),
+            evict = @CacheEvict(cacheNames = "hotelsByCity", allEntries = true)
+    )
     public Hotel save(Hotel hotel) {
         Hotel savedHotel = hotelRepository.save(hotel);
         publishEvent(HotelEventType.CREATED, savedHotel);
         return savedHotel;
     }
 
-    public List<Hotel> findByCity(String city) {
-        return hotelRepository.findByCity(city);
-    }
-
+    @Caching(
+            put = @CachePut(cacheNames = "hotelById", key = "#result.id"),
+            evict = @CacheEvict(cacheNames = "hotelsByCity", allEntries = true)
+    )
     public Hotel update(Long id, Hotel updates) {
         Hotel hotel = findById(id);
         hotel.setName(updates.getName());
@@ -55,6 +69,10 @@ public class HotelService {
         return updatedHotel;
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "hotelById", key = "#id"),
+            @CacheEvict(cacheNames = "hotelsByCity", allEntries = true)
+    })
     public void delete(Long id) {
         Hotel hotel = findById(id);
         hotelRepository.deleteById(id);

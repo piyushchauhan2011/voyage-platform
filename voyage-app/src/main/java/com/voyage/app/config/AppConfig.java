@@ -8,8 +8,13 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -18,10 +23,17 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.listener.ChannelTopic;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
+import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.backoff.FixedBackOff;
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 
+import java.time.Duration;
 import java.time.Clock;
 import java.util.HashMap;
 import java.util.Map;
@@ -49,6 +61,53 @@ public class AppConfig {
     public PasswordEncoder passwordEncoder() {
         // BCrypt applies an adaptive cost factor — slows brute-force as hardware improves
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "application.redis.enabled", havingValue = "true", matchIfMissing = true)
+    public CacheManager cacheManager(
+            RedisConnectionFactory redisConnectionFactory,
+            @Value("${application.redis.cache.ttl.hotel-by-id:PT10M}") Duration hotelByIdTtl,
+            @Value("${application.redis.cache.ttl.hotels-by-city:PT5M}") Duration hotelsByCityTtl) {
+        GenericJacksonJsonRedisSerializer serializer = GenericJacksonJsonRedisSerializer.create(builder -> builder
+                .enableDefaultTyping(BasicPolymorphicTypeValidator.builder()
+                        .allowIfSubType("com.voyage.app.")
+                        .allowIfSubType("java.util.")
+                        .allowIfSubType("java.lang.")
+                        .allowIfSubType("java.time.")
+                        .build()));
+
+        RedisCacheConfiguration defaults = RedisCacheConfiguration.defaultCacheConfig()
+                .disableCachingNullValues()
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer));
+
+        Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
+        cacheConfigurations.put("hotelById", defaults.entryTtl(hotelByIdTtl));
+        cacheConfigurations.put("hotelsByCity", defaults.entryTtl(hotelsByCityTtl));
+
+        return RedisCacheManager.builder(redisConnectionFactory)
+                .cacheDefaults(defaults)
+                .withInitialCacheConfigurations(cacheConfigurations)
+                .transactionAware()
+                .build();
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "application.redis.enabled", havingValue = "false")
+    public CacheManager inMemoryCacheManager() {
+        return new ConcurrentMapCacheManager("hotelById", "hotelsByCity");
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "application.redis.enabled", havingValue = "true", matchIfMissing = true)
+    public RedisMessageListenerContainer redisMessageListenerContainer(
+            RedisConnectionFactory redisConnectionFactory,
+            MessageListener redisPubSubRecorder,
+            @Value("${application.redis.pubsub.channel:voyage:notifications}") String redisPubSubChannel) {
+        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+        container.setConnectionFactory(redisConnectionFactory);
+        container.addMessageListener(redisPubSubRecorder, new ChannelTopic(redisPubSubChannel));
+        return container;
     }
 
     @Bean

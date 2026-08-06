@@ -162,6 +162,105 @@ Interview follow-ups for this phase:
 - when should you use a dead-letter topic instead of retrying inline?
 - how would you evolve `HotelEvent` to schema version 2 without breaking old consumers?
 
+### Redis caching
+Phase 6 now starts from the simplest cache story in this repo:
+
+```text
+Hotel availability / hotel details read
+        |
+        v
+      Redis
+        |
+        v
+     Postgres
+```
+
+What is implemented now:
+
+- `HotelService.findById(...)` caches single-hotel reads in Redis.
+- `HotelService.findByCity(...)` caches city-filtered reads in Redis.
+- `save`, `update`, and `delete` evict or refresh affected cache entries after the database write succeeds.
+- The test profile keeps Redis disabled and falls back to an in-memory cache so ordinary tests stay fast.
+
+Redis concepts to study in this phase:
+
+- `String` — single values, counters, flags, one-key cache entries.
+- `Hash` — field-based objects such as a hotel snapshot.
+- `List` — recent searches or append-only activity feeds.
+- `Set` — unique watchers, unique hotel ids, unique user ids.
+- `Sorted Set` — rankings such as cheapest hotels, popularity, or scoreboards.
+- `TTL` — short-lived availability or search caches.
+- `Eviction` — what Redis removes when memory fills up, and how policy choice changes behavior.
+- `Pub/Sub` — fire-and-forget fan-out for live notifications inside one running system.
+- `Distributed locks` — short reservation windows or protecting one critical section across nodes.
+
+The app also exposes a Redis playground under `/api/redis/playground` so you can exercise the data structures directly.
+All Redis playground endpoints require an admin bearer token.
+
+Quick examples:
+
+```bash
+# String with TTL
+curl -X POST http://localhost:8080/api/redis/playground/strings/demo:hotel:1 \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"value":"available","ttlSeconds":120}'
+
+# Hash
+curl -X POST http://localhost:8080/api/redis/playground/hashes/demo:hotel:1 \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"fields":{"name":"Grand Hyatt","city":"Tokyo","pricePerNight":"320"},"ttlSeconds":300}'
+
+# List
+curl -X POST http://localhost:8080/api/redis/playground/lists/demo:recent-searches \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"values":["Tokyo","Paris","Dubai"],"ttlSeconds":180}'
+
+# Set
+curl -X POST http://localhost:8080/api/redis/playground/sets/demo:watchers \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"values":["alice","bob","alice"],"ttlSeconds":180}'
+
+# Sorted set
+curl -X POST http://localhost:8080/api/redis/playground/sorted-sets/demo:popularity \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"values":[{"value":"tokyo","score":98},{"value":"paris","score":87}],"ttlSeconds":300}'
+
+# Pub/Sub publish
+curl -X POST http://localhost:8080/api/redis/playground/pubsub/publish \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"message":"booking-created"}'
+
+# Acquire a lock for 30 seconds
+curl -X POST http://localhost:8080/api/redis/playground/locks/inventory:hotel-42/acquire \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"owner":"booking-service-instance-1","ttlSeconds":30}'
+```
+
+Suggested learning path:
+
+1. Call one hotel read twice and confirm the second call is faster or no longer hits Postgres.
+2. Update or delete that hotel and confirm the cache gets refreshed or evicted.
+3. Create keys in the playground and inspect them with `redis-cli`.
+4. Watch TTL countdown with `GET /api/redis/playground/ttl/{key}`.
+5. Publish a message, then inspect `GET /api/redis/playground/pubsub/messages`.
+6. Acquire the same lock twice with different owners and confirm only one wins.
+
+How Redis maps to the services you want to learn next:
+
+- `User Service` — session state, refresh-token denylists, rate limits.
+- `Hotel Service` — hotel detail cache, city-search cache.
+- `Inventory Service` — short-lived availability cache, reservation locks.
+- `Booking Service` — idempotency keys, temporary booking holds.
+- `Payment Service` — deduplication keys, workflow checkpoints.
+- `Notification Service` — transient fan-out with Pub/Sub.
+
 ### Profiles
 `application.yml` + `application-dev.yml` — base config with profile overlays.  
 `application-test.yml` (in `src/test/resources`) — swaps Postgres for H2 during tests.
@@ -220,6 +319,7 @@ Also covers `groupingBy`, `flatMap`, `mapToDouble().sum()`, and `Optional` from 
 ### QA manual checks
 - End-to-end auth + hotel + Kafka happy path: `bash api_manual_checks/run_auth_hotel_flow.sh`
 - Kafka retries + dead-letter + replay path: `bash api_manual_checks/run_kafka_dlt_flow.sh`
+- Redis cache + playground verification path: `bash api_manual_checks/run_redis_flow.sh`
 - QA user lifecycle helper: `bash api_manual_checks/manage_qa_user.sh --help`
 
 Manual QA steps for the DLT and replay flow:
@@ -253,5 +353,5 @@ This repo is structured to grow with the learning plan:
 - **Phase 2–3 (now)** — `voyage-app`: Spring Core, REST, JPA
 - **Phase 4** — add Spring Security + JWT to `voyage-app`
 - **Phase 5 (complete)** — Kafka producer/consumer + Thymeleaf event dashboard for hotel mutations
-- **Phase 6** — add Redis caching layer (infrastructure already running)
+- **Phase 6 (in progress)** — Redis-backed hotel caching + Redis playground for Strings, Hashes, Lists, Sets, Sorted Sets, TTL, Pub/Sub, and locks
 - **Phase 7** — add `Dockerfile` per module, deploy to Kubernetes

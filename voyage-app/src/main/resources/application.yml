@@ -19,6 +19,15 @@ spring:
       hibernate:
         format_sql: true
 
+application:
+  security:
+    jwt:
+      # dev-only key — replace with a securely generated secret in production
+      secret-key: dLQCeGxj87SB0r8kCODJNiz40hxgfRyXJnQcQU9bqHg=
+      expiration: 900000          # access token: 15 minutes (ms)
+      refresh-token:
+        expiration: 604800000     # refresh token: 7 days (ms)
+
 server:
   port: 8080
 

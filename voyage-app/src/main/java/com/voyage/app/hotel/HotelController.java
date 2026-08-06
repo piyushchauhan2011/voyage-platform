@@ -49,4 +49,17 @@ public class HotelController {
     public Hotel create(@RequestBody Hotel hotel) {
         return hotelService.save(hotel);
     }
+
+    // PUT /api/hotels/1
+    @PutMapping("/{id}")
+    public Hotel update(@PathVariable Long id, @RequestBody Hotel hotel) {
+        return hotelService.update(id, hotel);
+    }
+
+    // DELETE /api/hotels/1
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id) {
+        hotelService.delete(id);
+    }
 }

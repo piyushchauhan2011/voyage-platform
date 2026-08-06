@@ -2,6 +2,8 @@ package com.voyage.app.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Clock;
 
@@ -22,5 +24,11 @@ public class AppConfig {
     @Bean
     public Clock applicationClock() {
         return Clock.systemUTC();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        // BCrypt applies an adaptive cost factor — slows brute-force as hardware improves
+        return new BCryptPasswordEncoder();
     }
 }

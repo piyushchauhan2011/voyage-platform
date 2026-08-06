@@ -37,4 +37,19 @@ public class HotelService {
     public List<Hotel> findByCity(String city) {
         return hotelRepository.findByCity(city);
     }
+
+    public Hotel update(Long id, Hotel updates) {
+        Hotel hotel = findById(id);
+        hotel.setName(updates.getName());
+        hotel.setCity(updates.getCity());
+        hotel.setPricePerNight(updates.getPricePerNight());
+        return hotelRepository.save(hotel);
+    }
+
+    public void delete(Long id) {
+        if (!hotelRepository.existsById(id)) {
+            throw new HotelNotFoundException(id);
+        }
+        hotelRepository.deleteById(id);
+    }
 }

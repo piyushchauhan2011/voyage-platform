@@ -54,7 +54,7 @@ class RabbitMqPlaygroundServiceTest extends RabbitMqIntegrationTestSupport {
         mockMvc.perform(post("/api/rabbitmq/playground/setup")
                         .header("Authorization", adminToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.exchange").value("voyage.jobs"))
+                .andExpect(jsonPath("$.exchange").value(org.hamcrest.Matchers.startsWith("voyage.jobs.test.")))
                 .andExpect(jsonPath("$.exchangeType").value("direct"))
                 .andExpect(jsonPath("$.bindings.length()").value(2));
 

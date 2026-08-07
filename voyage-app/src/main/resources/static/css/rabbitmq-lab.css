@@ -1,0 +1,58 @@
+.rabbitmq-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.rabbitmq-grid .output-panel {
+    grid-column: 1 / -1;
+}
+
+.button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.button-row.wrap {
+    margin-bottom: 0;
+}
+
+button.secondary,
+a.button-link.secondary {
+    background: transparent;
+    color: var(--accent-deep);
+    border: 1px solid var(--line);
+}
+
+a.button-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.65rem 1rem;
+    border-radius: 10px;
+    text-decoration: none;
+    font: inherit;
+    background: var(--accent, #2f5d50);
+    color: #fff;
+}
+
+.plan-output {
+    margin: 0;
+    padding: 16px;
+    min-height: 220px;
+    max-height: 520px;
+    overflow: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    background: #1d1a17;
+    color: #f4ede4;
+    border-radius: 12px;
+}
+
+@media (max-width: 900px) {
+    .rabbitmq-grid {
+        grid-template-columns: 1fr;
+    }
+}

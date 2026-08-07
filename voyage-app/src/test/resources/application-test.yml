@@ -6,6 +6,10 @@ spring:
     redis:
       repositories:
         enabled: false
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
   datasource:
     url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
@@ -40,6 +44,12 @@ application:
       backoff-ms: 1
   redis:
     enabled: false
+  rabbitmq:
+    enabled: false
+    exchange: voyage.jobs
+    queues:
+      booking-confirm: voyage.jobs.booking.confirm
+      email-send: voyage.jobs.email.send
   kafka:
     enabled: false
     retry:
@@ -48,3 +58,8 @@ application:
     topic:
       hotel-events: hotel-events-test
       hotel-events-dlt: hotel-events-test.DLT
+
+management:
+  health:
+    rabbit:
+      enabled: false

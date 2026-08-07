@@ -43,6 +43,12 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
 application:
   booking:
     retry:
@@ -56,6 +62,12 @@ application:
     topic:
       hotel-events: hotel-events
       hotel-events-dlt: hotel-events.DLT
+  rabbitmq:
+    enabled: true
+    exchange: voyage.jobs
+    queues:
+      booking-confirm: voyage.jobs.booking.confirm
+      email-send: voyage.jobs.email.send
   redis:
     enabled: true
     pubsub:

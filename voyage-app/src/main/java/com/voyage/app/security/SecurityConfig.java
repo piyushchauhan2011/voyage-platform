@@ -66,6 +66,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/kafka/**").hasRole("ADMIN")
                 .requestMatchers("/api/redis/**").hasRole("ADMIN")
                 .requestMatchers("/api/postgres/**").hasRole("ADMIN")
+                .requestMatchers("/api/rabbitmq/**").hasRole("ADMIN")
                 .requestMatchers("/api/jpa/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated()
                 .requestMatchers(HttpMethod.PATCH, "/api/v1/users/me").authenticated()

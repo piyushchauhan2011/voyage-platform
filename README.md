@@ -6,7 +6,7 @@ A Maven monorepo for learning backend Java and Spring Boot — structured around
 
 | Module | Stack | Purpose |
 |---|---|---|
-| [`voyage-app`](voyage-app/) | Spring Boot 4.1 · PostgreSQL · JPA · Kafka · Thymeleaf | Spring fundamentals: IoC, DI, REST, JPA, bean lifecycle, async messaging |
+| [`voyage-app`](voyage-app/) | Spring Boot 4.1 · PostgreSQL · JPA · Kafka · RabbitMQ · Thymeleaf | Spring fundamentals: IoC, DI, REST, JPA, bean lifecycle, async messaging |
 | [`java-mastery`](java-mastery/) | Plain Java 21 | Core Java: OOP, Collections internals, Streams & lambdas |
 
 ---
@@ -25,6 +25,7 @@ docker compose up -d
 | pgAdmin | http://localhost:5050 | `admin@voyage.com / admin` |
 | Redis | `localhost:6379` | — |
 | Kafka | `localhost:9092` | — |
+| RabbitMQ | `localhost:5672` (AMQP) · http://localhost:15672 (UI) | `guest / guest` |
 
 ### 2. Run the Spring Boot app
 
@@ -186,6 +187,56 @@ curl -X POST http://localhost:8080/api/postgres/playground/isolation/demo \
 ```
 
 Helper script: `bash api_manual_checks/seed_postgres_lab.sh`
+
+### RabbitMQ lab
+Hands-on AMQP for **Exchange**, **Queue**, **Routing Key**, and **Consumer** — taught as voyage **task queues** (background jobs), contrasted with Kafka event streaming.
+
+| Path | What it is |
+|---|---|
+| [`rabbitmq-lab/`](rabbitmq-lab/) | Shell recipes + Kafka comparison notes |
+| `/ui/rabbitmq` | Thymeleaf workbench (admin JWT) |
+| `/api/rabbitmq/playground` | Same labs via REST (ADMIN) |
+| http://localhost:15672 | RabbitMQ management UI (`guest` / `guest`) |
+
+Suggested learning path:
+
+1. `docker compose up -d` (includes RabbitMQ), start the app, open http://localhost:8080/ui/rabbitmq, login as ADMIN.
+2. **Setup topology** — direct exchange `voyage.jobs` bound to booking/email queues.
+3. Publish `booking.confirm` or `email.send`, then **Refresh consumed** to see the consumer delivery.
+4. Run **Routing demo** (matched key vs unbound `unknown.job`).
+5. **Load comparison**, then open [`/ui/kafka`](http://localhost:8080/ui/kafka) for the hotel event stream.
+
+Or from the management API scripts:
+
+```bash
+bash rabbitmq-lab/00_topology.sh
+bash rabbitmq-lab/01_publish_routing.sh
+bash rabbitmq-lab/02_consume_ack.sh
+```
+
+Quick API examples (admin bearer token):
+
+```bash
+# Declare / refresh topology
+curl -X POST http://localhost:8080/api/rabbitmq/playground/setup \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+
+# Publish a job
+curl -X POST http://localhost:8080/api/rabbitmq/playground/publish \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"routingKey":"booking.confirm","payload":"confirm-42"}'
+
+# See what LabJobConsumer recorded
+curl http://localhost:8080/api/rabbitmq/playground/consumed \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+
+# Kafka vs RabbitMQ comparison payload
+curl http://localhost:8080/api/rabbitmq/playground/compare \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+```
+
+Helper script: `bash api_manual_checks/seed_rabbitmq_lab.sh`
 
 ### Kafka & async messaging
 Phase 5 is implemented as a hotel event stream:

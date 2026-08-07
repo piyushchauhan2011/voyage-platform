@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voyage RabbitMQ Lab</title>
+    <link rel="stylesheet" th:href="@{/css/booking-workbench.css}">
+    <link rel="stylesheet" th:href="@{/css/rabbitmq-lab.css}">
+</head>
+<body>
+<div class="workbench-shell">
+    <header class="hero-band">
+        <div>
+            <p class="eyebrow">RabbitMQ lab</p>
+            <h1>Exchange, queue, routing key, consumer</h1>
+            <p class="hero-copy">
+                Declare a direct exchange for voyage background jobs, publish with routing keys,
+                and watch consumers deliver work — same ideas as <code>rabbitmq-lab/</code>.
+                For event streaming at scale, compare with
+                <a class="inline-link" th:href="@{/ui/kafka}">/ui/kafka</a>.
+            </p>
+        </div>
+        <div class="hero-card">
+            <h2>Suggested path</h2>
+            <ul>
+                <li>Login as ADMIN and run <strong>Setup topology</strong>.</li>
+                <li>Inspect exchange, queues, and routing keys.</li>
+                <li>Publish <code>booking.confirm</code>, then refresh consumed jobs.</li>
+                <li>Run the routing demo (matched vs unbound key).</li>
+                <li>Read Kafka vs RabbitMQ, then open <code>/ui/kafka</code>.</li>
+            </ul>
+        </div>
+    </header>
+
+    <main class="workbench-grid rabbitmq-grid">
+        <section class="panel auth-panel">
+            <div class="panel-heading">
+                <h2>Auth helper</h2>
+                <p>Admin JWT required for <strong>/api/rabbitmq/playground</strong>.</p>
+            </div>
+            <form id="login-form" class="stack-form">
+                <label>Username<input type="text" name="username" autocomplete="username" placeholder="admin"></label>
+                <label>Password<input type="password" name="password" autocomplete="current-password" placeholder="password123"></label>
+                <button type="submit">Login</button>
+            </form>
+            <label class="token-block">
+                Active access token
+                <textarea id="token-input" rows="5" placeholder="Paste a Bearer token here."></textarea>
+            </label>
+            <div id="auth-feedback" class="feedback" aria-live="polite"></div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <h2>Topology</h2>
+                <p>Exchange <code>voyage.jobs</code> (direct) plus two bound queues.</p>
+            </div>
+            <div class="button-row">
+                <button type="button" id="setup-btn">Setup topology</button>
+                <button type="button" id="topology-btn" class="secondary">Inspect topology</button>
+                <button type="button" id="purge-btn" class="secondary">Purge queues</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <h2>Publish (routing key)</h2>
+                <p>Producer sends to the exchange; the routing key selects the queue.</p>
+            </div>
+            <div class="button-row wrap">
+                <button type="button" class="publish-btn" data-routing-key="booking.confirm">booking.confirm</button>
+                <button type="button" class="publish-btn" data-routing-key="email.send">email.send</button>
+                <button type="button" class="publish-btn secondary" data-routing-key="unknown.job">unknown.job (unbound)</button>
+            </div>
+            <div class="button-row">
+                <button type="button" id="routing-demo-btn">Routing demo</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <h2>Consumer</h2>
+                <p><code>LabJobConsumer</code> records deliveries (queue + routing key).</p>
+            </div>
+            <div class="button-row">
+                <button type="button" id="consumed-btn">Refresh consumed</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <h2>Kafka vs RabbitMQ</h2>
+                <p>Streaming log vs task queues — when to reach for each.</p>
+            </div>
+            <div class="button-row">
+                <button type="button" id="compare-btn">Load comparison</button>
+                <a class="secondary button-link" th:href="@{/ui/kafka}">Open Kafka dashboard</a>
+            </div>
+        </section>
+
+        <section class="panel output-panel">
+            <div class="panel-heading">
+                <h2>Output</h2>
+                <p id="output-meta" class="hero-copy">Results appear here.</p>
+            </div>
+            <pre id="output-panel" class="plan-output" aria-live="polite">Ready.</pre>
+        </section>
+    </main>
+</div>
+
+<script th:inline="javascript">
+    window.rabbitMqLabConfig = {
+        storageKey: 'voyage.rabbitmq.lab.token',
+        loginUrl: /*[[@{/api/v1/auth/login}]]*/ '/api/v1/auth/login',
+        baseUrl: /*[[@{/api/rabbitmq/playground}]]*/ '/api/rabbitmq/playground'
+    };
+</script>
+<script th:src="@{/js/rabbitmq-lab.js}"></script>
+</body>
+</html>

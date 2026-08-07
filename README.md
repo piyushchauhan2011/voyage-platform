@@ -343,6 +343,94 @@ docker compose down          # stop containers, keep volumes
 docker compose down -v       # stop containers AND wipe volumes (fresh DB)
 ```
 
+### Phase 7 — Docker & Kubernetes
+
+All infra services and `voyage-app` run inside a local [kind](https://kind.sigs.k8s.io) cluster.
+
+#### Prerequisites — install kind
+
+```bash
+brew install kind
+```
+
+#### Create the cluster
+
+```bash
+kind create cluster
+# Sets kubectl context to "kind-kind" automatically
+kubectl cluster-info --context kind-kind
+```
+
+#### Build the image
+
+```bash
+# Run from the repo root (build context is the whole monorepo)
+docker build -t voyage-app:latest -f voyage-app/Dockerfile .
+```
+
+The Dockerfile is a two-stage build:
+- **builder** (`eclipse-temurin:21-jdk-alpine`) — runs `mvnw package -pl voyage-app -DskipTests` and produces the fat jar
+- **runtime** (`eclipse-temurin:21-jre-alpine`) — copies the jar and runs as a non-root `voyage` user
+
+Dependency layers are cached separately from source, so a source-only change skips the `dependency:go-offline` step.
+
+#### Load & deploy
+
+```bash
+# Load the image into kind nodes (kind clusters are isolated from the Docker daemon)
+kind load docker-image voyage-app:latest
+
+# Apply all manifests — namespace is created first (00-prefix), then everything else
+kubectl apply -f k8s/
+
+# Watch all pods come up (ctrl-c when all show 1/1 Running — takes ~90 s)
+kubectl get pods -n voyage -w
+```
+
+#### Access the app on macOS
+
+On macOS, kind runs inside Docker so NodePort `30080` is not reachable from `localhost` directly. Use port-forward instead:
+
+```bash
+kubectl port-forward -n voyage svc/voyage-app 8080:8080
+```
+
+Then in another terminal:
+
+```bash
+curl http://localhost:8080/actuator/health
+curl http://localhost:8080/api/hotels          # expects JWT — returns 401 without a token
+open http://localhost:8080/ui/kafka
+```
+
+Keep the port-forward running while you use the app. Press `ctrl-c` to stop it.
+
+#### Kubernetes manifest map
+
+| File | What it creates |
+|---|---|
+| `k8s/00-namespace.yaml` | `voyage` namespace (prefixed so it applies before other resources) |
+| `k8s/voyage-app-config.yaml` | ConfigMap (env vars) + Secret (DB password, JWT key) |
+| `k8s/postgres.yaml` | Deployment + ClusterIP Service + 1 Gi PVC |
+| `k8s/redis.yaml` | Deployment + ClusterIP Service |
+| `k8s/zookeeper.yaml` | Deployment + ClusterIP Service |
+| `k8s/kafka.yaml` | Deployment + ClusterIP Service |
+| `k8s/voyage-app.yaml` | Deployment (with init containers) + NodePort Service (30080) |
+
+Key differences from docker-compose:
+- `KAFKA_ADVERTISED_LISTENERS` uses in-cluster DNS (`kafka:9092`) instead of `localhost:9092`
+- `voyage-app` has init containers that wait for Postgres and Kafka to be reachable before the Spring Boot process starts
+- `enableServiceLinks: false` on the kafka pod — Kubernetes would otherwise inject `KAFKA_PORT` from the Service, which Confluent Platform misinterprets as a broker config property and crashes
+- `SPRING_JPA_HIBERNATE_DDL_AUTO: create` overrides the local `create-drop` — in k8s a rolling update runs the old pod's shutdown (which drops all tables) after the new pod has already started, so `create` is used instead: it recreates tables fresh on every startup but never drops them on shutdown
+- `strategy: type: Recreate` on the voyage-app Deployment — ensures the old pod is fully terminated before the new pod starts, so both cannot hold the database schema simultaneously
+
+#### Teardown
+
+```bash
+kubectl delete -f k8s/          # remove all Kubernetes resources and the PVC
+kind delete cluster             # delete the kind cluster itself
+```
+
 ---
 
 ## Roadmap coverage
@@ -354,4 +442,4 @@ This repo is structured to grow with the learning plan:
 - **Phase 4** — add Spring Security + JWT to `voyage-app`
 - **Phase 5 (complete)** — Kafka producer/consumer + Thymeleaf event dashboard for hotel mutations
 - **Phase 6 (in progress)** — Redis-backed hotel caching + Redis playground for Strings, Hashes, Lists, Sets, Sorted Sets, TTL, Pub/Sub, and locks
-- **Phase 7** — add `Dockerfile` per module, deploy to Kubernetes
+- **Phase 7 (complete)** — `voyage-app/Dockerfile` (multi-stage) + full Kubernetes deployment in `k8s/`

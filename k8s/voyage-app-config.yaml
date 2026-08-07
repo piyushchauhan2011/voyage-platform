@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: voyage-app-config
+  namespace: voyage
+data:
+  # Override the localhost default so the app resolves the postgres Service
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/voyage_db
+  POSTGRES_DB: voyage_db
+  POSTGRES_USER: voyage
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  KAFKA_GROUP_ID: voyage-hotel-events-ui
+  # create-drop is safe for local dev but dangerous in k8s: rolling updates terminate
+  # the old pod AFTER the new one starts, causing the old pod's shutdown to drop tables
+  # that the new pod is already serving. Use update so tables are never dropped on shutdown.
+  SPRING_JPA_HIBERNATE_DDL_AUTO: create
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: voyage-app-secret
+  namespace: voyage
+# stringData lets you provide plain text; Kubernetes base64-encodes it at apply time
+stringData:
+  POSTGRES_PASSWORD: voyage
+  APPLICATION_SECURITY_JWT_SECRET_KEY: dLQCeGxj87SB0r8kCODJNiz40hxgfRyXJnQcQU9bqHg=

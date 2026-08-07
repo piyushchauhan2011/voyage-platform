@@ -1,0 +1,7 @@
+target/
+voyage-app/target/
+java-mastery/target/
+.git/
+.env
+*.md
+*.cmd

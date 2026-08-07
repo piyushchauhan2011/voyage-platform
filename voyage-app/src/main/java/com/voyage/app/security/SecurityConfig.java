@@ -15,6 +15,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import jakarta.servlet.DispatcherType;
+
 /**
  * SecurityFilterChain replaces the deprecated WebSecurityConfigurerAdapter (removed in Spring Security 6).
  *
@@ -56,6 +58,8 @@ public class SecurityConfig {
             // Never create a server-side session; every request must carry its own JWT
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // Allow Spring Boot's error dispatcher so a real error page/message reaches the client
+                .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers(HttpMethod.GET, "/ui/**", "/css/**", "/js/**").permitAll()

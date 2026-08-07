@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voyage JPA Lab</title>
+    <link rel="stylesheet" th:href="@{/css/booking-workbench.css}">
+    <link rel="stylesheet" th:href="@{/css/jpa-lab.css}">
+</head>
+<body>
+<div class="workbench-shell">
+    <header class="hero-band">
+        <div>
+            <p class="eyebrow">JPA skills lab</p>
+            <h1>Lifecycle, loading, queries, transactions</h1>
+            <p class="hero-copy">
+                Deep-dive Hibernate and Spring Data JPA using Voyage's real booking flow:
+                check availability → reserve room → charge payment → commit.
+                Pair with <code>jpa-lab/README.md</code> and the Postgres lab for SQL isolation.
+            </p>
+        </div>
+        <div class="hero-card">
+            <h2>Suggested path</h2>
+            <ul>
+                <li>Login as ADMIN and seed lab fixtures.</li>
+                <li>Lifecycle: persist, then detach &amp; mutate.</li>
+                <li>Loading: N+1 vs EntityGraph (compare <code>queryCount</code>).</li>
+                <li>Query APIs: JPQL, Criteria, Specifications.</li>
+                <li>Transactions: success, rollback, propagation, lock contention.</li>
+            </ul>
+        </div>
+    </header>
+
+    <main class="workbench-grid jpa-grid">
+        <section class="panel auth-panel">
+            <div class="panel-heading">
+                <h2>Auth helper</h2>
+                <p>Admin JWT required for <strong>/api/jpa/playground</strong>.</p>
+            </div>
+            <form id="login-form" class="stack-form">
+                <label>Username<input type="text" name="username" autocomplete="username" placeholder="admin"></label>
+                <label>Password<input type="password" name="password" autocomplete="current-password" placeholder="password123"></label>
+                <button type="submit">Login</button>
+            </form>
+            <label class="token-block">
+                Active access token
+                <textarea id="token-input" rows="5" placeholder="Paste a Bearer token here."></textarea>
+            </label>
+            <div id="auth-feedback" class="feedback" aria-live="polite"></div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <h2>Seed &amp; lifecycle</h2>
+                <p>Lab hotel/user/inventory, then NEW → MANAGED → DETACHED.</p>
+            </div>
+            <div class="button-row wrap">
+                <button type="button" id="seed-btn">Seed lab fixtures</button>
+                <button type="button" id="persist-btn" class="secondary">Persist hotel</button>
+                <button type="button" id="detach-btn" class="secondary">Detach &amp; mutate</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <h2>Lazy loading &amp; N+1</h2>
+                <p>Touch LAZY hotels after a plain list query, then fix with EntityGraph.</p>
+            </div>
+            <div class="button-row wrap">
+                <button type="button" id="nplus1-btn">N+1 demo</button>
+                <button type="button" id="entity-graph-btn" class="secondary">EntityGraph fix</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <h2>Query APIs</h2>
+                <p>Same booking filters expressed three ways.</p>
+            </div>
+            <div class="button-row wrap">
+                <button type="button" id="jpql-btn">JPQL</button>
+                <button type="button" id="criteria-btn" class="secondary">Criteria API</button>
+                <button type="button" id="spec-btn" class="secondary">Specifications</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <h2>Transactions (booking)</h2>
+                <p>REPEATABLE_READ create, rollback on decline, propagation map, FOR UPDATE wait.</p>
+            </div>
+            <div class="button-row wrap">
+                <button type="button" id="booking-success-btn">Booking success</button>
+                <button type="button" id="booking-rollback-btn" class="secondary">Booking rollback</button>
+                <button type="button" id="propagation-btn" class="secondary">Propagation map</button>
+                <button type="button" id="deadlock-btn" class="secondary">Lock contention</button>
+            </div>
+        </section>
+
+        <section class="panel output-panel">
+            <div class="panel-heading">
+                <h2>Output</h2>
+                <p id="output-meta" class="hero-copy">Results appear here.</p>
+            </div>
+            <pre id="output-panel" class="plan-output" aria-live="polite">Ready.</pre>
+        </section>
+    </main>
+</div>
+
+<script th:inline="javascript">
+    window.jpaLabConfig = {
+        storageKey: 'voyage.jpa.lab.token',
+        loginUrl: /*[[@{/api/v1/auth/login}]]*/ '/api/v1/auth/login',
+        baseUrl: /*[[@{/api/jpa/playground}]]*/ '/api/jpa/playground'
+    };
+</script>
+<script th:src="@{/js/jpa-lab.js}"></script>
+</body>
+</html>

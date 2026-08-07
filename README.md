@@ -109,10 +109,23 @@ Instantiation → Dependency injection → @PostConstruct → [ready] → @PreDe
 
 `HotelRepository.java` — Spring Data derives the SQL for `findByCity` from the method name at startup. No implementation needed.
 
-Key interview topics to explore next:
-- N+1 problem (fetch a hotel's rooms — watch the SQL with `show-sql: true`)
-- `@Transactional` propagation and isolation levels
-- `EXPLAIN ANALYZE` on your queries in pgAdmin — see **PostgreSQL lab** below
+### JPA skills lab
+Hands-on entity lifecycle, lazy/eager loading, N+1, JPQL, Criteria API, Specifications, and Spring `@Transactional` — taught against the real booking flow (reserve → charge → commit).
+
+| Path | What it is |
+|---|---|
+| [`jpa-lab/`](jpa-lab/) | Curated learning path mapped to Voyage source |
+| `/ui/jpa` | Thymeleaf workbench (admin JWT) |
+| `/api/jpa/playground` | Same labs via REST (ADMIN) |
+
+Suggested learning path:
+
+1. Start Postgres + the app, open http://localhost:8080/ui/jpa, login as ADMIN.
+2. **Seed lab fixtures**, then Lifecycle → persist / detach & mutate.
+3. Loading → **N+1 demo** vs **EntityGraph fix** (compare `queryCount`).
+4. Query APIs → JPQL / Criteria / Specifications.
+5. Transactions → booking success, rollback (`decline`), propagation map, lock contention.
+6. For SQL-level isolation / `FOR UPDATE`, continue in the **PostgreSQL lab** below.
 
 ### PostgreSQL lab
 Hands-on indexes, composite indexes, the query planner, `EXPLAIN ANALYZE`, partitioning, locks, and isolation.
@@ -130,7 +143,7 @@ Suggested learning path:
 3. Run **booking_by_hotel** explain → drop `idx_booking_hotel` → explain again → recreate index.
 4. Compare composite vs single-column with **booking_by_hotel_checkin**.
 5. **Setup partitions** on `pg_lab_bookings`, then **Explain pruning**.
-6. Run READ COMMITTED vs REPEATABLE READ demos; compare with `BookingService` (`REPEATABLE_READ`) and `RoomInventoryRepository.findForUpdate` (`FOR UPDATE`).
+6. Run READ COMMITTED vs REPEATABLE READ demos; compare with `BookingService` (`REPEATABLE_READ`) and `RoomInventoryRepository.findForUpdate` (`FOR UPDATE`). Pair with the **JPA skills lab** for Spring annotation semantics on the same booking story.
 
 Or from SQL:
 

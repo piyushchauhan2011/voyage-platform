@@ -37,3 +37,5 @@ docker exec -it voyage-postgres psql -U voyage -d voyage_db -f /tmp/postgres-lab
 - API: `/api/postgres/playground/*` (ADMIN JWT)
 
 See the root README **PostgreSQL lab** section for curl examples.
+
+For Spring `@Transactional`, N+1, and the booking TX story on the same domain model, see [`jpa-lab/`](../jpa-lab/) and `/ui/jpa`.

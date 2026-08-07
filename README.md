@@ -28,6 +28,7 @@ docker compose up -d
 | RabbitMQ | `localhost:5672` (AMQP) · http://localhost:15672 (UI) | `guest / guest` |
 | Prometheus | http://localhost:9090 | scrapes app + exporters |
 | Grafana | http://localhost:3000 | `admin / admin` — dashboard **Voyage SRE Lab** |
+| Jenkins (opt-in profile) | http://localhost:8081 | unlock with initial admin password (see §4c) |
 
 ### 2. Run the Spring Boot app
 
@@ -100,6 +101,29 @@ open http://localhost:8080/ui/ai
 ```
 
 GitHub Actions (`.github/workflows/ci.yml`) runs these on every push/PR to `main`: parallel **quality**, **unit-tests** (+ JaCoCo), and **integration-tests** (Docker/Testcontainers), then **package**.
+
+### 4c. Local Jenkins (CI learning lab)
+
+Jenkins is **not** started by default. Use it to practice Pipeline jobs locally; GitHub Actions stays the source of truth for PRs.
+
+```bash
+# Start only Jenkins (other services can already be up)
+docker compose --profile jenkins up -d jenkins
+
+# Unlock password (first boot)
+docker exec voyage-jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+
+# Stop when done
+docker compose --profile jenkins stop jenkins
+```
+
+1. Open http://localhost:8081 and paste the unlock password.
+2. Install **suggested plugins** (includes Pipeline).
+3. Create an admin user, then **New Item → Pipeline**.
+4. Under **Pipeline** → Definition: *Pipeline script from SCM* → Git → your clone URL (GitHub remote, or a local `file:///path/to/voyage-platform` if the agent can read it) → Script Path `Jenkinsfile`.
+5. **Build Now**. The first run is slow (Maven deps + Testcontainers images); later builds reuse the Docker/Maven cache.
+
+The root `Jenkinsfile` mirrors the GitHub Actions stages: parallel Quality / Unit tests / Integration tests, then Package.
 
 ### 5. Build everything
 

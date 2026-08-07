@@ -166,7 +166,7 @@ expect_status "$HEALTH_RESPONSE" "200"
 printf '%s' "$HEALTH_RESPONSE" | json_body | jq
 
 log "Registering a QA user dedicated to the DLT flow: $USERNAME"
-REGISTER_RESPONSE="$(request POST "/api/auth/register" "{\"username\":\"$USERNAME\",\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}")"
+REGISTER_RESPONSE="$(request POST "/api/v1/auth/register" "{\"username\":\"$USERNAME\",\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}")"
 expect_status "$REGISTER_RESPONSE" "201"
 printf '%s' "$REGISTER_RESPONSE" | json_body | jq
 
@@ -175,7 +175,7 @@ docker exec -i "$POSTGRES_CONTAINER" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" 
   -c "update users set role = 'ADMIN' where username = '$(sql_escape "$USERNAME")';" >/dev/null
 
 log "Logging in again to get an ADMIN bearer token"
-LOGIN_RESPONSE="$(request POST "/api/auth/login" "{\"username\":\"$USERNAME\",\"password\":\"$PASSWORD\"}")"
+LOGIN_RESPONSE="$(request POST "/api/v1/auth/login" "{\"username\":\"$USERNAME\",\"password\":\"$PASSWORD\"}")"
 expect_status "$LOGIN_RESPONSE" "200"
 LOGIN_JSON="$(printf '%s' "$LOGIN_RESPONSE" | json_body)"
 printf '%s' "$LOGIN_JSON" | jq

@@ -116,7 +116,7 @@ log "Checking Redis container health"
 redis_exec ping | grep -q PONG || fail "Redis container did not respond to PING"
 
 log "Registering a QA user for Redis checks"
-REGISTER_RESPONSE="$(request POST "/api/auth/register" "{\"username\":\"$USERNAME\",\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}")"
+REGISTER_RESPONSE="$(request POST "/api/v1/auth/register" "{\"username\":\"$USERNAME\",\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}")"
 expect_status "$REGISTER_RESPONSE" "201"
 
 log "Promoting $USERNAME to ADMIN"
@@ -124,7 +124,7 @@ docker exec -i "$POSTGRES_CONTAINER" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" 
   -c "update users set role = 'ADMIN' where username = '$USERNAME';" >/dev/null
 
 log "Logging in as ADMIN"
-LOGIN_RESPONSE="$(request POST "/api/auth/login" "{\"username\":\"$USERNAME\",\"password\":\"$PASSWORD\"}")"
+LOGIN_RESPONSE="$(request POST "/api/v1/auth/login" "{\"username\":\"$USERNAME\",\"password\":\"$PASSWORD\"}")"
 expect_status "$LOGIN_RESPONSE" "200"
 LOGIN_JSON="$(printf '%s' "$LOGIN_RESPONSE" | json_body)"
 ADMIN_ACCESS_TOKEN="$(printf '%s' "$LOGIN_JSON" | jq -r '.accessToken')"
@@ -133,15 +133,15 @@ log "Flushing Redis so the cache checks start clean"
 redis_exec FLUSHDB >/dev/null
 
 log "Creating a hotel to drive Redis caching"
-CREATE_RESPONSE="$(request POST "/api/hotels" "{\"name\":\"Redis Manual Check Hotel\",\"city\":\"Tokyo\",\"pricePerNight\":245}" -H "Authorization: Bearer $ADMIN_ACCESS_TOKEN")"
+CREATE_RESPONSE="$(request POST "/api/v1/hotels" "{\"name\":\"Redis Manual Check Hotel\",\"city\":\"Tokyo\",\"pricePerNight\":245}" -H "Authorization: Bearer $ADMIN_ACCESS_TOKEN")"
 expect_status "$CREATE_RESPONSE" "201"
 CREATE_JSON="$(printf '%s' "$CREATE_RESPONSE" | json_body)"
 HOTEL_ID="$(printf '%s' "$CREATE_JSON" | jq -r '.id')"
 printf '%s' "$CREATE_JSON" | jq
 
 log "Calling hotel GET by id twice to populate Redis"
-FIRST_GET_RESPONSE="$(request GET "/api/hotels/$HOTEL_ID" "")"
-SECOND_GET_RESPONSE="$(request GET "/api/hotels/$HOTEL_ID" "")"
+FIRST_GET_RESPONSE="$(request GET "/api/v1/hotels/$HOTEL_ID" "")"
+SECOND_GET_RESPONSE="$(request GET "/api/v1/hotels/$HOTEL_ID" "")"
 expect_status "$FIRST_GET_RESPONSE" "200"
 expect_status "$SECOND_GET_RESPONSE" "200"
 
@@ -150,7 +150,7 @@ redis_exec KEYS "hotelById::*" | grep -q "$HOTEL_ID" || fail "Expected hotelById
 redis_exec TTL "hotelById::$HOTEL_ID"
 
 log "Calling hotel city search twice to populate Redis"
-SEARCH_RESPONSE="$(request GET "/api/hotels/search?city=Tokyo" "")"
+SEARCH_RESPONSE="$(request GET "/api/v1/hotels/search?city=Tokyo" "")"
 expect_status "$SEARCH_RESPONSE" "200"
 printf '%s' "$SEARCH_RESPONSE" | json_body | jq
 redis_exec KEYS "hotelsByCity::*" | grep -q "Tokyo" || fail "Expected city cache key for Tokyo"

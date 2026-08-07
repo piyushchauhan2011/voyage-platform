@@ -79,8 +79,15 @@ application:
     topic:
       hotel-events: hotel-events-test
       hotel-events-dlt: hotel-events-test.DLT
+  observability:
+    chaos:
+      enabled: true
 
 management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
   health:
     rabbit:
       enabled: false

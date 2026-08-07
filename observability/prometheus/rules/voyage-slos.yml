@@ -1,0 +1,116 @@
+groups:
+  - name: voyage-sli-recording
+    interval: 15s
+    rules:
+      # Slow API / latency SLI: share of requests finishing under 500ms
+      - record: voyage:http_latency_sli:ratio_rate5m
+        expr: |
+          sum(rate(http_server_requests_seconds_bucket{application="voyage-app",le="0.5"}[5m]))
+          /
+          clamp_min(sum(rate(http_server_requests_seconds_bucket{application="voyage-app",le="+Inf"}[5m])), 1e-9)
+
+      # Availability SLI: non-5xx share
+      - record: voyage:http_availability_sli:ratio_rate5m
+        expr: |
+          (
+            sum(rate(http_server_requests_seconds_count{application="voyage-app"}[5m]))
+            -
+            sum(rate(http_server_requests_seconds_count{application="voyage-app",status=~"5.."}[5m]))
+          )
+          /
+          clamp_min(sum(rate(http_server_requests_seconds_count{application="voyage-app"}[5m])), 1e-9)
+
+      # CPU "good" ratio: fraction of time under 80%
+      - record: voyage:cpu_sli:ratio_rate5m
+        expr: |
+          avg_over_time((process_cpu_usage{application="voyage-app"} < bool 0.80)[5m:15s])
+
+      # Memory SLI: fraction of time heap under 85% of max
+      - record: voyage:heap_sli:ratio_rate5m
+        expr: |
+          avg_over_time(
+            (
+              (
+                sum(jvm_memory_used_bytes{application="voyage-app",area="heap"})
+                /
+                clamp_min(sum(jvm_memory_max_bytes{application="voyage-app",area="heap"}), 1)
+              ) < bool 0.85
+            )[5m:15s]
+          )
+
+      # Kafka lag SLI: lag under 100 messages is "good"
+      - record: voyage:kafka_lag_sli:ratio_rate5m
+        expr: |
+          avg_over_time((sum(kafka_consumergroup_lag) < bool 100)[5m:15s])
+
+      # Redis eviction SLI: no eviction increase is "good"
+      - record: voyage:redis_eviction_sli:ratio_rate5m
+        expr: |
+          avg_over_time((rate(redis_evicted_keys_total[1m]) <= bool 0)[5m:15s])
+
+      # Deadlock SLI: no new deadlock lab increments is "good" under normal traffic
+      - record: voyage:deadlock_sli:ratio_rate5m
+        expr: |
+          avg_over_time((rate(voyage_chaos_deadlocks_total[1m]) <= bool 0)[5m:15s])
+
+  - name: voyage-slo-alerts
+    rules:
+      - alert: VoyageHttpLatencySloBurn
+        expr: voyage:http_latency_sli:ratio_rate5m < 0.99
+        for: 2m
+        labels:
+          severity: warning
+          sli: latency
+        annotations:
+          summary: "HTTP latency SLO burn (p99 target 500ms)"
+          description: "Less than 99% of requests finished under 500ms over 5m. See observability/runbooks/slow-api.md"
+
+      - alert: VoyageCpuSloBurn
+        expr: voyage:cpu_sli:ratio_rate5m < 0.95
+        for: 1m
+        labels:
+          severity: warning
+          sli: cpu
+        annotations:
+          summary: "CPU SLO burn (target <80% usage)"
+          description: "CPU exceeded 80% too often in the last 5m. See observability/runbooks/cpu-spike.md"
+
+      - alert: VoyageHeapSloBurn
+        expr: voyage:heap_sli:ratio_rate5m < 0.99
+        for: 2m
+        labels:
+          severity: warning
+          sli: memory
+        annotations:
+          summary: "Heap SLO burn (target <85% of max)"
+          description: "Heap stayed above 85% too often. See observability/runbooks/memory-leak.md"
+
+      - alert: VoyageKafkaLagSloBurn
+        expr: voyage:kafka_lag_sli:ratio_rate5m < 0.99
+        for: 1m
+        labels:
+          severity: warning
+          sli: kafka_lag
+        annotations:
+          summary: "Kafka consumer lag SLO burn"
+          description: "Consumer lag exceeded 100 messages. See observability/runbooks/kafka-lag.md"
+
+      - alert: VoyageRedisEvictionSloBurn
+        expr: voyage:redis_eviction_sli:ratio_rate5m < 0.99
+        for: 1m
+        labels:
+          severity: warning
+          sli: redis_eviction
+        annotations:
+          summary: "Redis eviction SLO burn"
+          description: "Keys are being evicted under maxmemory. See observability/runbooks/redis-eviction.md"
+
+      - alert: VoyageDeadlockActivity
+        expr: rate(voyage_chaos_deadlocks_total[5m]) > 0
+        for: 30s
+        labels:
+          severity: info
+          sli: deadlock
+        annotations:
+          summary: "DB lock contention / deadlock lab activity detected"
+          description: "voyage_chaos_deadlocks_total is increasing. See observability/runbooks/db-deadlock.md"

@@ -35,7 +35,7 @@ Usage:
   bash api_manual_checks/manage_qa_user.sh <action> [options]
 
 Actions:
-  create     Register a QA user through /api/auth/register
+  create     Register a QA user through /api/v1/auth/register
   promote    Promote an existing user to ROLE_ADMIN in Postgres
   delete     Delete a user and any refresh tokens in Postgres
 
@@ -108,9 +108,9 @@ create_user() {
     EMAIL="${USERNAME}@test.com"
   fi
 
-  log "Registering QA user '$USERNAME' via $BASE_URL/api/auth/register"
+  log "Registering QA user '$USERNAME' via $BASE_URL/api/v1/auth/register"
   local response
-  response="$(request POST "/api/auth/register" "{\"username\":\"$USERNAME\",\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}")"
+  response="$(request POST "/api/v1/auth/register" "{\"username\":\"$USERNAME\",\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}")"
   expect_status "$response" "201"
   printf '%s' "$response" | json_body | jq
 

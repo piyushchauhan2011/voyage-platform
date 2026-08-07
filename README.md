@@ -23,9 +23,11 @@ docker compose up -d
 |---|---|---|
 | PostgreSQL (pgvector) | `localhost:5432` | `voyage / voyage` |
 | pgAdmin | http://localhost:5050 | `admin@voyage.com / admin` |
-| Redis | `localhost:6379` | — |
+| Redis | `localhost:6379` | `maxmemory 64mb`, `allkeys-lru` (eviction lab) |
 | Kafka | `localhost:9092` | — |
 | RabbitMQ | `localhost:5672` (AMQP) · http://localhost:15672 (UI) | `guest / guest` |
+| Prometheus | http://localhost:9090 | scrapes app + exporters |
+| Grafana | http://localhost:3000 | `admin / admin` — dashboard **Voyage SRE Lab** |
 
 ### 2. Run the Spring Boot app
 
@@ -52,8 +54,15 @@ curl "http://localhost:8080/api/v1/hotels?city=Tokyo"
 # Spring Actuator health
 curl http://localhost:8080/actuator/health
 
+# Prometheus scrape (Micrometer)
+curl http://localhost:8080/actuator/prometheus | head
+
 # Kafka dashboard
 open http://localhost:8080/ui/kafka
+
+# Grafana SRE lab (CPU / memory / latency / deadlock / Kafka lag / Redis eviction)
+open http://localhost:3000
+# see observability/README.md for chaos endpoints + runbooks
 
 # Spring AI hotel assistant (needs GEMINI_API_KEY — see Phase 8)
 open http://localhost:8080/ui/ai

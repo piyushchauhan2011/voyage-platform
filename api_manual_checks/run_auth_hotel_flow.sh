@@ -111,12 +111,12 @@ expect_status "$HEALTH_RESPONSE" "200"
 printf '%s' "$HEALTH_RESPONSE" | json_body | jq
 
 log "Registering a new ROLE_USER account: $USERNAME"
-REGISTER_RESPONSE="$(request POST "/api/auth/register" "{\"username\":\"$USERNAME\",\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}")"
+REGISTER_RESPONSE="$(request POST "/api/v1/auth/register" "{\"username\":\"$USERNAME\",\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}")"
 expect_status "$REGISTER_RESPONSE" "201"
 printf '%s' "$REGISTER_RESPONSE" | json_body | jq
 
 log "Logging in as the new user"
-LOGIN_RESPONSE="$(request POST "/api/auth/login" "{\"username\":\"$USERNAME\",\"password\":\"$PASSWORD\"}")"
+LOGIN_RESPONSE="$(request POST "/api/v1/auth/login" "{\"username\":\"$USERNAME\",\"password\":\"$PASSWORD\"}")"
 expect_status "$LOGIN_RESPONSE" "200"
 LOGIN_JSON="$(printf '%s' "$LOGIN_RESPONSE" | json_body)"
 printf '%s' "$LOGIN_JSON" | jq
@@ -124,12 +124,12 @@ ACCESS_TOKEN="$(printf '%s' "$LOGIN_JSON" | jq -r '.accessToken')"
 REFRESH_TOKEN="$(printf '%s' "$LOGIN_JSON" | jq -r '.refreshToken')"
 
 log "Verifying public hotel reads"
-GET_HOTELS_RESPONSE="$(request GET "/api/hotels" "")"
+GET_HOTELS_RESPONSE="$(request GET "/api/v1/hotels" "")"
 expect_status "$GET_HOTELS_RESPONSE" "200"
 printf '%s' "$GET_HOTELS_RESPONSE" | json_body | jq
 
 log "Verifying ROLE_USER cannot create a hotel"
-FORBIDDEN_CREATE_RESPONSE="$(request POST "/api/hotels" "{\"name\":\"Forbidden Hotel\",\"city\":\"Paris\",\"pricePerNight\":180}" -H "Authorization: Bearer $ACCESS_TOKEN")"
+FORBIDDEN_CREATE_RESPONSE="$(request POST "/api/v1/hotels" "{\"name\":\"Forbidden Hotel\",\"city\":\"Paris\",\"pricePerNight\":180}" -H "Authorization: Bearer $ACCESS_TOKEN")"
 expect_status "$FORBIDDEN_CREATE_RESPONSE" "403"
 printf '%s' "$FORBIDDEN_CREATE_RESPONSE" | json_body | jq
 
@@ -138,7 +138,7 @@ docker exec -i "$POSTGRES_CONTAINER" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" 
   -c "update users set role = 'ADMIN' where username = '$USERNAME';" >/dev/null
 
 log "Logging in again to get a token with ADMIN role"
-ADMIN_LOGIN_RESPONSE="$(request POST "/api/auth/login" "{\"username\":\"$USERNAME\",\"password\":\"$PASSWORD\"}")"
+ADMIN_LOGIN_RESPONSE="$(request POST "/api/v1/auth/login" "{\"username\":\"$USERNAME\",\"password\":\"$PASSWORD\"}")"
 expect_status "$ADMIN_LOGIN_RESPONSE" "200"
 ADMIN_LOGIN_JSON="$(printf '%s' "$ADMIN_LOGIN_RESPONSE" | json_body)"
 printf '%s' "$ADMIN_LOGIN_JSON" | jq
@@ -146,7 +146,7 @@ ADMIN_ACCESS_TOKEN="$(printf '%s' "$ADMIN_LOGIN_JSON" | jq -r '.accessToken')"
 ADMIN_REFRESH_TOKEN="$(printf '%s' "$ADMIN_LOGIN_JSON" | jq -r '.refreshToken')"
 
 log "Creating a hotel as admin"
-CREATE_RESPONSE="$(request POST "/api/hotels" "{\"name\":\"Grand Hyatt Manual Check\",\"city\":\"Tokyo\",\"pricePerNight\":220}" -H "Authorization: Bearer $ADMIN_ACCESS_TOKEN")"
+CREATE_RESPONSE="$(request POST "/api/v1/hotels" "{\"name\":\"Grand Hyatt Manual Check\",\"city\":\"Tokyo\",\"pricePerNight\":220}" -H "Authorization: Bearer $ADMIN_ACCESS_TOKEN")"
 expect_status "$CREATE_RESPONSE" "201"
 CREATE_JSON="$(printf '%s' "$CREATE_RESPONSE" | json_body)"
 printf '%s' "$CREATE_JSON" | jq
@@ -156,7 +156,7 @@ log "Verifying the CREATED Kafka event appears in /ui/kafka/status"
 wait_for_kafka_event "$HOTEL_ID" "CREATED"
 
 log "Updating hotel $HOTEL_ID as admin"
-UPDATE_RESPONSE="$(request PUT "/api/hotels/$HOTEL_ID" "{\"name\":\"Grand Hyatt Manual Check Updated\",\"city\":\"Tokyo\",\"pricePerNight\":260}" -H "Authorization: Bearer $ADMIN_ACCESS_TOKEN")"
+UPDATE_RESPONSE="$(request PUT "/api/v1/hotels/$HOTEL_ID" "{\"name\":\"Grand Hyatt Manual Check Updated\",\"city\":\"Tokyo\",\"pricePerNight\":260}" -H "Authorization: Bearer $ADMIN_ACCESS_TOKEN")"
 expect_status "$UPDATE_RESPONSE" "200"
 printf '%s' "$UPDATE_RESPONSE" | json_body | jq
 
@@ -164,23 +164,23 @@ log "Verifying the UPDATED Kafka event appears in /ui/kafka/status"
 wait_for_kafka_event "$HOTEL_ID" "UPDATED"
 
 log "Deleting hotel $HOTEL_ID as admin"
-DELETE_RESPONSE="$(request DELETE "/api/hotels/$HOTEL_ID" "" -H "Authorization: Bearer $ADMIN_ACCESS_TOKEN")"
+DELETE_RESPONSE="$(request DELETE "/api/v1/hotels/$HOTEL_ID" "" -H "Authorization: Bearer $ADMIN_ACCESS_TOKEN")"
 expect_status "$DELETE_RESPONSE" "204"
 
 log "Verifying the DELETED Kafka event appears in /ui/kafka/status"
 wait_for_kafka_event "$HOTEL_ID" "DELETED"
 
 log "Refreshing the access token"
-REFRESH_RESPONSE="$(request POST "/api/auth/refresh" "{\"refreshToken\":\"$ADMIN_REFRESH_TOKEN\"}")"
+REFRESH_RESPONSE="$(request POST "/api/v1/auth/refresh" "{\"refreshToken\":\"$ADMIN_REFRESH_TOKEN\"}")"
 expect_status "$REFRESH_RESPONSE" "200"
 printf '%s' "$REFRESH_RESPONSE" | json_body | jq
 
 log "Logging out and revoking refresh tokens"
-LOGOUT_RESPONSE="$(request POST "/api/auth/logout" "{\"refreshToken\":\"$ADMIN_REFRESH_TOKEN\"}")"
+LOGOUT_RESPONSE="$(request POST "/api/v1/auth/logout" "{\"refreshToken\":\"$ADMIN_REFRESH_TOKEN\"}")"
 expect_status "$LOGOUT_RESPONSE" "204"
 
 log "Verifying the revoked refresh token now returns 401"
-REFRESH_AFTER_LOGOUT_RESPONSE="$(request POST "/api/auth/refresh" "{\"refreshToken\":\"$ADMIN_REFRESH_TOKEN\"}")"
+REFRESH_AFTER_LOGOUT_RESPONSE="$(request POST "/api/v1/auth/refresh" "{\"refreshToken\":\"$ADMIN_REFRESH_TOKEN\"}")"
 expect_status "$REFRESH_AFTER_LOGOUT_RESPONSE" "401"
 printf '%s' "$REFRESH_AFTER_LOGOUT_RESPONSE" | json_body | jq
 

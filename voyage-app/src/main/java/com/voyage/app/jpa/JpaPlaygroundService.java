@@ -638,14 +638,3 @@ record BookingTxResult(
 
 record PropagationMapResult(Map<String, String> methods, String tip) {
 }
-
-record LockContentionResult(
-        Long inventoryId,
-        String stayDate,
-        String holder,
-        String contender,
-        long elapsedMs,
-        int roomsAfter,
-        String tip
-) {
-}

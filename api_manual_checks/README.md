@@ -85,7 +85,7 @@ BASE_URL=http://localhost:8080
 ### 1. Register a user
 
 ```bash
-curl -s -X POST "$BASE_URL/api/auth/register" \
+curl -s -X POST "$BASE_URL/api/v1/auth/register" \
   -H "Content-Type: application/json" \
   -d '{"username":"qa_user","email":"qa_user@test.com","password":"password123"}' | jq
 ```
@@ -106,7 +106,7 @@ Expected JSON shape:
 ### 2. Login and capture tokens
 
 ```bash
-LOGIN_RESPONSE=$(curl -s -X POST "$BASE_URL/api/auth/login" \
+LOGIN_RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"username":"qa_user","password":"password123"}')
 
@@ -121,8 +121,8 @@ Expected status: `200`
 ### 3. Verify public hotel read endpoints
 
 ```bash
-curl -s "$BASE_URL/api/hotels" | jq
-curl -s "$BASE_URL/api/hotels/search?city=Tokyo" | jq
+curl -s "$BASE_URL/api/v1/hotels" | jq
+curl -s "$BASE_URL/api/v1/hotels/search?city=Tokyo" | jq
 ```
 
 Expected status: `200`
@@ -130,7 +130,7 @@ Expected status: `200`
 ### 4. Verify a normal user cannot create hotels
 
 ```bash
-curl -i -s -X POST "$BASE_URL/api/hotels" \
+curl -i -s -X POST "$BASE_URL/api/v1/hotels" \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name":"Forbidden Hotel","city":"Paris","pricePerNight":180}'
@@ -152,7 +152,7 @@ If your compose env differs from the defaults, replace the DB name and username 
 ### 6. Login again to get an admin token
 
 ```bash
-ADMIN_LOGIN_RESPONSE=$(curl -s -X POST "$BASE_URL/api/auth/login" \
+ADMIN_LOGIN_RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"username":"qa_user","password":"password123"}')
 
@@ -169,7 +169,7 @@ Important detail: each login issues a new refresh token and revokes the previous
 ### 7. Create a hotel as admin
 
 ```bash
-CREATE_RESPONSE=$(curl -s -X POST "$BASE_URL/api/hotels" \
+CREATE_RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/hotels" \
   -H "Authorization: Bearer $ADMIN_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name":"Grand Hyatt Manual Check","city":"Tokyo","pricePerNight":220}')
@@ -205,7 +205,7 @@ Useful fields to inspect:
 ### 8. Update the hotel as admin
 
 ```bash
-curl -s -X PUT "$BASE_URL/api/hotels/$HOTEL_ID" \
+curl -s -X PUT "$BASE_URL/api/v1/hotels/$HOTEL_ID" \
   -H "Authorization: Bearer $ADMIN_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name":"Grand Hyatt Manual Check Updated","city":"Tokyo","pricePerNight":260}' | jq
@@ -224,7 +224,7 @@ Expected: the feed now includes an `UPDATED` event for the same hotel id with a 
 ### 9. Delete the hotel as admin
 
 ```bash
-curl -i -s -X DELETE "$BASE_URL/api/hotels/$HOTEL_ID" \
+curl -i -s -X DELETE "$BASE_URL/api/v1/hotels/$HOTEL_ID" \
   -H "Authorization: Bearer $ADMIN_ACCESS_TOKEN"
 ```
 
@@ -291,7 +291,7 @@ Important detail: if you retry with another invalid payload, the message will fa
 ### 10. Refresh the access token
 
 ```bash
-REFRESH_RESPONSE=$(curl -s -X POST "$BASE_URL/api/auth/refresh" \
+REFRESH_RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/auth/refresh" \
   -H "Content-Type: application/json" \
   -d "{\"refreshToken\":\"$ADMIN_REFRESH_TOKEN\"}")
 
@@ -303,7 +303,7 @@ Expected status: `200`
 ### 11. Logout and verify refresh token is revoked
 
 ```bash
-curl -i -s -X POST "$BASE_URL/api/auth/logout" \
+curl -i -s -X POST "$BASE_URL/api/v1/auth/logout" \
   -H "Content-Type: application/json" \
   -d "{\"refreshToken\":\"$ADMIN_REFRESH_TOKEN\"}"
 ```
@@ -313,7 +313,7 @@ Expected status: `204`
 Now retry refresh:
 
 ```bash
-curl -i -s -X POST "$BASE_URL/api/auth/refresh" \
+curl -i -s -X POST "$BASE_URL/api/v1/auth/refresh" \
   -H "Content-Type: application/json" \
   -d "{\"refreshToken\":\"$ADMIN_REFRESH_TOKEN\"}"
 ```
@@ -370,7 +370,7 @@ bash api_manual_checks/manage_qa_user.sh <action> [options]
 
 Supported actions:
 
-- `create` registers a QA user through `POST /api/auth/register`
+- `create` registers a QA user through `POST /api/v1/auth/register`
 - `promote` updates the user to `ROLE_ADMIN` in Postgres
 - `delete` removes the user and any refresh tokens in Postgres
 

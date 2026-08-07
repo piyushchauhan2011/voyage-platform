@@ -46,19 +46,26 @@ request() {
   local body="${3:-}"
   shift 3 || true
   local -a extra_args=()
+
   if (($# > 0)); then
     extra_args=("$@")
   fi
 
   if [[ -n "$body" ]]; then
     if ((${#extra_args[@]} > 0)); then
-      curl -sS -i -X "$method" "$BASE_URL$path" -H "Content-Type: application/json" "${extra_args[@]}" -d "$body"
+      curl -sS -i -X "$method" "$BASE_URL$path" \
+        -H "Content-Type: application/json" \
+        "${extra_args[@]}" \
+        -d "$body"
     else
-      curl -sS -i -X "$method" "$BASE_URL$path" -H "Content-Type: application/json" -d "$body"
+      curl -sS -i -X "$method" "$BASE_URL$path" \
+        -H "Content-Type: application/json" \
+        -d "$body"
     fi
   else
     if ((${#extra_args[@]} > 0)); then
-      curl -sS -i -X "$method" "$BASE_URL$path" "${extra_args[@]}"
+      curl -sS -i -X "$method" "$BASE_URL$path" \
+        "${extra_args[@]}"
     else
       curl -sS -i -X "$method" "$BASE_URL$path"
     fi
@@ -70,6 +77,7 @@ expect_status() {
   local expected="$2"
   local actual
   actual="$(printf '%s' "$response" | http_code)"
+
   if [[ "$actual" != "$expected" ]]; then
     printf '%s\n' "$response"
     fail "Expected HTTP $expected but got $actual"
@@ -83,15 +91,21 @@ set_role() {
     -c "update users set role = '$role' where username = '$username';" >/dev/null
 }
 
+login_token() {
+  local username="$1"
+  local response
+  response="$(request POST "/api/v1/auth/login" "{\"username\":\"$username\",\"password\":\"$PASSWORD\"}")"
+  expect_status "$response" "200"
+  printf '%s' "$response" | json_body | jq -r '.accessToken'
+}
+
 register_and_login() {
   local username="$1"
   local email="${username}@test.com"
   local response
   response="$(request POST "/api/v1/auth/register" "{\"username\":\"$username\",\"email\":\"$email\",\"password\":\"$PASSWORD\"}")"
   expect_status "$response" "201"
-  response="$(request POST "/api/v1/auth/login" "{\"username\":\"$username\",\"password\":\"$PASSWORD\"}")"
-  expect_status "$response" "200"
-  printf '%s' "$response" | json_body | jq -r '.accessToken'
+  login_token "$username"
 }
 
 user_id() {
@@ -101,7 +115,8 @@ user_id() {
 }
 
 log "Checking service health at $BASE_URL"
-expect_status "$(request GET "/actuator/health" "")" "200"
+HEALTH_RESPONSE="$(request GET "/actuator/health" "")"
+expect_status "$HEALTH_RESPONSE" "200"
 
 log "Registering admin / manager / customer"
 ADMIN_TOKEN="$(register_and_login "$ADMIN_USER")"
@@ -110,15 +125,21 @@ CUSTOMER_TOKEN="$(register_and_login "$CUSTOMER_USER")"
 
 set_role "$ADMIN_USER" "ADMIN"
 set_role "$MANAGER_USER" "HOTEL_MANAGER"
-ADMIN_TOKEN="$(request POST "/api/v1/auth/login" "{\"username\":\"$ADMIN_USER\",\"password\":\"$PASSWORD\"}" | json_body | jq -r '.accessToken')"
-MANAGER_TOKEN="$(request POST "/api/v1/auth/login" "{\"username\":\"$MANAGER_USER\",\"password\":\"$PASSWORD\"}" | json_body | jq -r '.accessToken')"
+ADMIN_TOKEN="$(login_token "$ADMIN_USER")"
+MANAGER_TOKEN="$(login_token "$MANAGER_USER")"
 MANAGER_ID="$(user_id "$MANAGER_USER")"
 
 log "CUSTOMER cannot create hotels"
-expect_status "$(request POST "/api/v1/hotels" "{\"name\":\"Nope\",\"city\":\"Paris\",\"pricePerNight\":100}" -H "Authorization: Bearer $CUSTOMER_TOKEN")" "403"
+FORBIDDEN_CREATE="$(request POST "/api/v1/hotels" \
+  "{\"name\":\"Nope\",\"city\":\"Paris\",\"pricePerNight\":100}" \
+  -H "Authorization: Bearer $CUSTOMER_TOKEN")"
+expect_status "$FORBIDDEN_CREATE" "403"
+printf '%s' "$FORBIDDEN_CREATE" | json_body | jq
 
 log "HOTEL_MANAGER creates first hotel (FREE plan)"
-CREATE_RESPONSE="$(request POST "/api/v1/hotels" "{\"name\":\"ABAC Inn\",\"city\":\"Berlin\",\"pricePerNight\":200}" -H "Authorization: Bearer $MANAGER_TOKEN")"
+CREATE_RESPONSE="$(request POST "/api/v1/hotels" \
+  "{\"name\":\"ABAC Inn\",\"city\":\"Berlin\",\"pricePerNight\":200}" \
+  -H "Authorization: Bearer $MANAGER_TOKEN")"
 expect_status "$CREATE_RESPONSE" "201"
 HOTEL_JSON="$(printf '%s' "$CREATE_RESPONSE" | json_body)"
 printf '%s' "$HOTEL_JSON" | jq
@@ -126,29 +147,57 @@ HOTEL_ID="$(printf '%s' "$HOTEL_JSON" | jq -r '.id')"
 
 log "FREE plan blocks inventory writes"
 INV_DATE="$(date -u -v+45d +%Y-%m-%d 2>/dev/null || date -u -d '+45 days' +%Y-%m-%d)"
-expect_status "$(request POST "/api/v1/inventory" "{\"hotelId\":$HOTEL_ID,\"roomType\":\"DOUBLE\",\"date\":\"$INV_DATE\",\"availableRooms\":2}" -H "Authorization: Bearer $MANAGER_TOKEN")" "403"
+FORBIDDEN_INV="$(request POST "/api/v1/inventory" \
+  "{\"hotelId\":$HOTEL_ID,\"roomType\":\"DOUBLE\",\"date\":\"$INV_DATE\",\"availableRooms\":2}" \
+  -H "Authorization: Bearer $MANAGER_TOKEN")"
+expect_status "$FORBIDDEN_INV" "403"
 
 log "Admin upgrades hotel to PRO and inventory succeeds"
-expect_status "$(request PATCH "/api/v1/hotels/$HOTEL_ID/management" "{\"managerId\":$MANAGER_ID,\"saasPlan\":\"PRO\"}" -H "Authorization: Bearer $ADMIN_TOKEN")" "200"
-expect_status "$(request POST "/api/v1/inventory" "{\"hotelId\":$HOTEL_ID,\"roomType\":\"DOUBLE\",\"date\":\"$INV_DATE\",\"availableRooms\":2}" -H "Authorization: Bearer $MANAGER_TOKEN")" "201"
+UPGRADE_PRO="$(request PATCH "/api/v1/hotels/$HOTEL_ID/management" \
+  "{\"managerId\":$MANAGER_ID,\"saasPlan\":\"PRO\"}" \
+  -H "Authorization: Bearer $ADMIN_TOKEN")"
+expect_status "$UPGRADE_PRO" "200"
+CREATE_INV="$(request POST "/api/v1/inventory" \
+  "{\"hotelId\":$HOTEL_ID,\"roomType\":\"DOUBLE\",\"date\":\"$INV_DATE\",\"availableRooms\":2}" \
+  -H "Authorization: Bearer $MANAGER_TOKEN")"
+expect_status "$CREATE_INV" "201"
 
 CHECK_IN="$INV_DATE"
 CHECK_OUT="$(date -u -v+46d +%Y-%m-%d 2>/dev/null || date -u -d '+46 days' +%Y-%m-%d)"
 
 log "Customer books NON_REFUNDABLE (15% off) — self-refund forbidden"
-BOOK_NR="$(request POST "/api/v1/bookings" "{\"hotelId\":$HOTEL_ID,\"roomType\":\"DOUBLE\",\"checkIn\":\"$CHECK_IN\",\"checkOut\":\"$CHECK_OUT\",\"paymentToken\":\"approve\",\"ratePlan\":\"NON_REFUNDABLE\"}" -H "Authorization: Bearer $CUSTOMER_TOKEN")"
+BOOK_NR="$(request POST "/api/v1/bookings" \
+  "{\"hotelId\":$HOTEL_ID,\"roomType\":\"DOUBLE\",\"checkIn\":\"$CHECK_IN\",\"checkOut\":\"$CHECK_OUT\",\"paymentToken\":\"approve\",\"ratePlan\":\"NON_REFUNDABLE\"}" \
+  -H "Authorization: Bearer $CUSTOMER_TOKEN")"
 expect_status "$BOOK_NR" "201"
 BOOK_NR_JSON="$(printf '%s' "$BOOK_NR" | json_body)"
 printf '%s' "$BOOK_NR_JSON" | jq
 BOOKING_ID="$(printf '%s' "$BOOK_NR_JSON" | jq -r '.id')"
-PAY_JSON="$(request GET "/api/v1/payments?bookingId=$BOOKING_ID" "" -H "Authorization: Bearer $CUSTOMER_TOKEN" | json_body)"
+
+PAY_RESPONSE="$(request GET "/api/v1/payments?bookingId=$BOOKING_ID" "" \
+  -H "Authorization: Bearer $CUSTOMER_TOKEN")"
+expect_status "$PAY_RESPONSE" "200"
+PAY_JSON="$(printf '%s' "$PAY_RESPONSE" | json_body)"
 printf '%s' "$PAY_JSON" | jq
 PAYMENT_ID="$(printf '%s' "$PAY_JSON" | jq -r '.id')"
-expect_status "$(request POST "/api/v1/payments/$PAYMENT_ID/refund" "" -H "Authorization: Bearer $CUSTOMER_TOKEN")" "403"
+
+CUSTOMER_REFUND="$(request POST "/api/v1/payments/$PAYMENT_ID/refund" "" \
+  -H "Authorization: Bearer $CUSTOMER_TOKEN")"
+expect_status "$CUSTOMER_REFUND" "403"
 
 log "PRO manager also cannot refund — upgrade to ENTERPRISE"
-expect_status "$(request POST "/api/v1/payments/$PAYMENT_ID/refund" "" -H "Authorization: Bearer $MANAGER_TOKEN")" "403"
-expect_status "$(request PATCH "/api/v1/hotels/$HOTEL_ID/management" "{\"managerId\":$MANAGER_ID,\"saasPlan\":\"ENTERPRISE\"}" -H "Authorization: Bearer $ADMIN_TOKEN")" "200"
-expect_status "$(request POST "/api/v1/payments/$PAYMENT_ID/refund" "" -H "Authorization: Bearer $MANAGER_TOKEN")" "200"
+MANAGER_REFUND_PRO="$(request POST "/api/v1/payments/$PAYMENT_ID/refund" "" \
+  -H "Authorization: Bearer $MANAGER_TOKEN")"
+expect_status "$MANAGER_REFUND_PRO" "403"
+
+UPGRADE_ENT="$(request PATCH "/api/v1/hotels/$HOTEL_ID/management" \
+  "{\"managerId\":$MANAGER_ID,\"saasPlan\":\"ENTERPRISE\"}" \
+  -H "Authorization: Bearer $ADMIN_TOKEN")"
+expect_status "$UPGRADE_ENT" "200"
+
+MANAGER_REFUND_ENT="$(request POST "/api/v1/payments/$PAYMENT_ID/refund" "" \
+  -H "Authorization: Bearer $MANAGER_TOKEN")"
+expect_status "$MANAGER_REFUND_ENT" "200"
+printf '%s' "$MANAGER_REFUND_ENT" | json_body | jq
 
 log "ABAC + payment manual check completed successfully"

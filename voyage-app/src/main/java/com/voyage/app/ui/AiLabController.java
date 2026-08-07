@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/ui/ai")
 public class AiLabController {
 
-    @GetMapping
-    public String lab() {
-        return "ai-lab";
-    }
+  @GetMapping
+  public String lab() {
+    return "ai-lab";
+  }
 }

@@ -4,7 +4,7 @@ import com.voyage.app.exception.UnauthorizedException;
 
 public class RefreshTokenException extends UnauthorizedException {
 
-    public RefreshTokenException(String message) {
-        super(message);
-    }
+  public RefreshTokenException(String message) {
+    super(message);
+  }
 }

@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/ui/rabbitmq")
 public class RabbitMqLabController {
 
-    @GetMapping
-    public String lab() {
-        return "rabbitmq-lab";
-    }
+  @GetMapping
+  public String lab() {
+    return "rabbitmq-lab";
+  }
 }

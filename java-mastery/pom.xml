@@ -14,6 +14,11 @@
 	<name>java-mastery</name>
 	<description>Plain Java — OOP, Collections, Streams, JVM internals, Multithreading</description>
 
+	<!-- Demo module has no unit tests; skip coverage gate -->
+	<properties>
+		<jacoco.skip>true</jacoco.skip>
+	</properties>
+
 	<build>
 		<plugins>
 			<plugin>

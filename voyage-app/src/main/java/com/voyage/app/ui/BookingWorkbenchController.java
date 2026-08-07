@@ -11,16 +11,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/ui/bookings")
 public class BookingWorkbenchController {
 
-    private final HotelService hotelService;
+  private final HotelService hotelService;
 
-    public BookingWorkbenchController(HotelService hotelService) {
-        this.hotelService = hotelService;
-    }
+  public BookingWorkbenchController(HotelService hotelService) {
+    this.hotelService = hotelService;
+  }
 
-    @GetMapping
-    public String workbench(Model model) {
-        model.addAttribute("hotels", hotelService.findAll());
-        model.addAttribute("roomTypes", RoomType.values());
-        return "booking-workbench";
-    }
+  @GetMapping
+  public String workbench(Model model) {
+    model.addAttribute("hotels", hotelService.findAll());
+    model.addAttribute("roomTypes", RoomType.values());
+    return "booking-workbench";
+  }
 }

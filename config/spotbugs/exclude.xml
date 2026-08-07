@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+  <Match>
+    <Class name="~.*\.package-info"/>
+  </Match>
+  <!-- Intentional System.gc() in the memory-leak chaos playground demo -->
+  <Match>
+    <Class name="com.voyage.app.observability.ObservabilityChaosService"/>
+    <Bug pattern="DM_GC"/>
+  </Match>
+</FindBugsFilter>

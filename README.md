@@ -74,12 +74,32 @@ open http://localhost:8080/ui/ai
 ./mvnw exec:java -pl java-mastery -Dexec.mainClass=com.voyage.mastery.Main
 ```
 
-### 4. Run tests (no Docker needed)
+### 4. Run tests
 
 ```bash
-./mvnw test -pl voyage-app      # uses H2 in-memory DB
-./mvnw test                     # all modules
+# Unit / in-process tests (Surefire) — H2, EmbeddedKafka; no Docker required
+./mvnw test -pl voyage-app
+./mvnw test
+
+# Integration tests (Failsafe) — *IntegrationTest / *IT; Testcontainers when Docker is available
+./mvnw verify -pl voyage-app -Dsurefire.skip=true
+
+# Full verify: unit + integration + quality plugins bound to verify
+./mvnw verify -pl voyage-app
 ```
+
+### 4b. Formatting, lint, static analysis, coverage
+
+```bash
+./mvnw spotless:apply          # format sources (google-java-format)
+./mvnw spotless:check          # fail if formatting is dirty
+./mvnw checkstyle:check        # style lint
+./mvnw pmd:check pmd:cpd-check # static analysis + complexity + duplication
+./mvnw -DskipTests compile spotbugs:check
+./mvnw test jacoco:report jacoco:check -pl voyage-app   # coverage (≥40% lines)
+```
+
+GitHub Actions (`.github/workflows/ci.yml`) runs these on every push/PR to `main`: parallel **quality**, **unit-tests** (+ JaCoCo), and **integration-tests** (Docker/Testcontainers), then **package**.
 
 ### 5. Build everything
 

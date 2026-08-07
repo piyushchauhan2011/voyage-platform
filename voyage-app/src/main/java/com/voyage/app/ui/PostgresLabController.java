@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/ui/postgres")
 public class PostgresLabController {
 
-    @GetMapping
-    public String lab() {
-        return "postgres-lab";
-    }
+  @GetMapping
+  public String lab() {
+    return "postgres-lab";
+  }
 }

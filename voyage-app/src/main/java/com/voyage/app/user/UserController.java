@@ -17,32 +17,33 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/users")
 public class UserController {
 
-    private final UserService userService;
+  private final UserService userService;
 
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
+  public UserController(UserService userService) {
+    this.userService = userService;
+  }
 
-    @GetMapping("/me")
-    public UserProfileResponse getCurrentUser(Authentication authentication) {
-        return userService.getByUsername(authentication.getName());
-    }
+  @GetMapping("/me")
+  public UserProfileResponse getCurrentUser(Authentication authentication) {
+    return userService.getByUsername(authentication.getName());
+  }
 
-    @PatchMapping("/me")
-    public UserProfileResponse updateCurrentUser(Authentication authentication,
-                                                 @Valid @RequestBody UpdateProfileRequest request) {
-        return userService.updateProfile(authentication.getName(), request);
-    }
+  @PatchMapping("/me")
+  public UserProfileResponse updateCurrentUser(
+      Authentication authentication, @Valid @RequestBody UpdateProfileRequest request) {
+    return userService.updateProfile(authentication.getName(), request);
+  }
 
-    @GetMapping
-    public PageResponse<UserProfileResponse> getUsers(@RequestParam(required = false) Role role,
-                                                      @PageableDefault(size = 20, sort = "username") Pageable pageable) {
-        return PageResponse.from(userService.findAll(role, pageable));
-    }
+  @GetMapping
+  public PageResponse<UserProfileResponse> getUsers(
+      @RequestParam(required = false) Role role,
+      @PageableDefault(size = 20, sort = "username") Pageable pageable) {
+    return PageResponse.from(userService.findAll(role, pageable));
+  }
 
-    @PatchMapping("/{id}/role")
-    public UserProfileResponse updateRole(@PathVariable Long id,
-                                          @Valid @RequestBody UpdateUserRoleRequest request) {
-        return userService.updateRole(id, request);
-    }
+  @PatchMapping("/{id}/role")
+  public UserProfileResponse updateRole(
+      @PathVariable Long id, @Valid @RequestBody UpdateUserRoleRequest request) {
+    return userService.updateRole(id, request);
+  }
 }

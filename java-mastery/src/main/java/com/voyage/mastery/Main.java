@@ -9,12 +9,12 @@ import com.voyage.mastery.streams.StreamsDemo;
 
 public class Main {
 
-    public static void main(String[] args) {
-        OopDemo.run();
-        CollectionsDemo.run();
-        StreamsDemo.run();
-        JvmDemo.run();
-        ConcurrencyDemo.run();
-        DoubleBookingDemo.run();
-    }
+  public static void main(String[] args) {
+    OopDemo.run();
+    CollectionsDemo.run();
+    StreamsDemo.run();
+    JvmDemo.run();
+    ConcurrencyDemo.run();
+    DoubleBookingDemo.run();
+  }
 }

@@ -11,24 +11,24 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/payments")
 public class PaymentController {
 
-    private final PaymentService paymentService;
+  private final PaymentService paymentService;
 
-    public PaymentController(PaymentService paymentService) {
-        this.paymentService = paymentService;
-    }
+  public PaymentController(PaymentService paymentService) {
+    this.paymentService = paymentService;
+  }
 
-    @GetMapping("/{paymentId}")
-    public PaymentResponse getPayment(@PathVariable Long paymentId) {
-        return paymentService.getById(paymentId);
-    }
+  @GetMapping("/{paymentId}")
+  public PaymentResponse getPayment(@PathVariable Long paymentId) {
+    return paymentService.getById(paymentId);
+  }
 
-    @GetMapping
-    public PaymentResponse getPaymentByBooking(@RequestParam Long bookingId) {
-        return paymentService.getByBookingId(bookingId);
-    }
+  @GetMapping
+  public PaymentResponse getPaymentByBooking(@RequestParam Long bookingId) {
+    return paymentService.getByBookingId(bookingId);
+  }
 
-    @PostMapping("/{paymentId}/refund")
-    public PaymentResponse refund(@PathVariable Long paymentId) {
-        return paymentService.refund(paymentId);
-    }
+  @PostMapping("/{paymentId}/refund")
+  public PaymentResponse refund(@PathVariable Long paymentId) {
+    return paymentService.refund(paymentId);
+  }
 }

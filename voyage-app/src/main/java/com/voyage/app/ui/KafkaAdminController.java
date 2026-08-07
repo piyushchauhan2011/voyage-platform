@@ -15,42 +15,46 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/kafka")
-@ConditionalOnProperty(name = "application.kafka.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(
+    name = "application.kafka.enabled",
+    havingValue = "true",
+    matchIfMissing = true)
 public class KafkaAdminController {
 
-    private final DeadLetterHotelEventService deadLetterHotelEventService;
-    private final HotelEventPublisher hotelEventPublisher;
-    private final String hotelEventsTopic;
+  private final DeadLetterHotelEventService deadLetterHotelEventService;
+  private final HotelEventPublisher hotelEventPublisher;
+  private final String hotelEventsTopic;
 
-    public KafkaAdminController(DeadLetterHotelEventService deadLetterHotelEventService,
-                                HotelEventPublisher hotelEventPublisher,
-                                @Value("${application.kafka.topic.hotel-events}") String hotelEventsTopic) {
-        this.deadLetterHotelEventService = deadLetterHotelEventService;
-        this.hotelEventPublisher = hotelEventPublisher;
-        this.hotelEventsTopic = hotelEventsTopic;
-    }
+  public KafkaAdminController(
+      DeadLetterHotelEventService deadLetterHotelEventService,
+      HotelEventPublisher hotelEventPublisher,
+      @Value("${application.kafka.topic.hotel-events}") String hotelEventsTopic) {
+    this.deadLetterHotelEventService = deadLetterHotelEventService;
+    this.hotelEventPublisher = hotelEventPublisher;
+    this.hotelEventsTopic = hotelEventsTopic;
+  }
 
-    @PostMapping("/publish-raw")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public PublishRawKafkaMessageResponse publishRaw(@RequestBody PublishRawKafkaMessageRequest request) {
-        hotelEventPublisher.publishRaw(request.messageKey(), request.payload());
-        return new PublishRawKafkaMessageResponse(hotelEventsTopic, request.messageKey(), request.payload());
-    }
+  @PostMapping("/publish-raw")
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  public PublishRawKafkaMessageResponse publishRaw(
+      @RequestBody PublishRawKafkaMessageRequest request) {
+    hotelEventPublisher.publishRaw(request.messageKey(), request.payload());
+    return new PublishRawKafkaMessageResponse(
+        hotelEventsTopic, request.messageKey(), request.payload());
+  }
 
-    @PostMapping("/dead-letters/{id}/retry")
-    @ResponseStatus(HttpStatus.OK)
-    public DeadLetterRetryResponse retryDeadLetter(@PathVariable Long id,
-                                                   @RequestBody(required = false) RetryDeadLetterRequest request) {
-        DeadLetterHotelEvent event = deadLetterHotelEventService.retryDeadLetter(
-                id,
-                request != null ? request.payloadOverride() : null
-        );
-        return new DeadLetterRetryResponse(
-                event.getId(),
-                event.getRetryStatus().name(),
-                event.getRetryCount(),
-                event.getLastRetriedAt(),
-                event.getOriginalTopic()
-        );
-    }
+  @PostMapping("/dead-letters/{id}/retry")
+  @ResponseStatus(HttpStatus.OK)
+  public DeadLetterRetryResponse retryDeadLetter(
+      @PathVariable Long id, @RequestBody(required = false) RetryDeadLetterRequest request) {
+    DeadLetterHotelEvent event =
+        deadLetterHotelEventService.retryDeadLetter(
+            id, request != null ? request.payloadOverride() : null);
+    return new DeadLetterRetryResponse(
+        event.getId(),
+        event.getRetryStatus().name(),
+        event.getRetryCount(),
+        event.getLastRetriedAt(),
+        event.getOriginalTopic());
+  }
 }

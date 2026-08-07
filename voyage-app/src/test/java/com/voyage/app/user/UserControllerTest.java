@@ -1,5 +1,10 @@
 package com.voyage.app.user;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.voyage.app.security.JwtService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,74 +16,88 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class UserControllerTest {
 
-    @Autowired MockMvc mockMvc;
-    @Autowired ObjectMapper objectMapper;
-    @Autowired UserRepository userRepository;
-    @Autowired PasswordEncoder passwordEncoder;
-    @Autowired JwtService jwtService;
+  @Autowired MockMvc mockMvc;
+  @Autowired ObjectMapper objectMapper;
+  @Autowired UserRepository userRepository;
+  @Autowired PasswordEncoder passwordEncoder;
+  @Autowired JwtService jwtService;
 
-    private String bearerTokenFor(Role role, String username) {
-        User user = new User(username, username + "@test.com", passwordEncoder.encode("password123"), role);
-        User savedUser = userRepository.save(user);
-        return "Bearer " + jwtService.generateToken(savedUser);
-    }
+  private String bearerTokenFor(Role role, String username) {
+    User user =
+        new User(username, username + "@test.com", passwordEncoder.encode("password123"), role);
+    User savedUser = userRepository.save(user);
+    return "Bearer " + jwtService.generateToken(savedUser);
+  }
 
-    @Test
-    void getCurrentUser_returnsOwnProfile() throws Exception {
-        mockMvc.perform(get("/api/v1/users/me")
-                        .header("Authorization", bearerTokenFor(Role.CUSTOMER, "profile-user")))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("profile-user"))
-                .andExpect(jsonPath("$.role").value("CUSTOMER"));
-    }
+  @Test
+  void getCurrentUser_returnsOwnProfile() throws Exception {
+    mockMvc
+        .perform(
+            get("/api/v1/users/me")
+                .header("Authorization", bearerTokenFor(Role.CUSTOMER, "profile-user")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.username").value("profile-user"))
+        .andExpect(jsonPath("$.role").value("CUSTOMER"));
+  }
 
-    @Test
-    void updateCurrentUser_updatesOwnProfile() throws Exception {
-        mockMvc.perform(patch("/api/v1/users/me")
-                        .header("Authorization", bearerTokenFor(Role.CUSTOMER, "profile-update-user"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new UpdateProfileRequest("updated-user", "updated@test.com"))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("updated-user"))
-                .andExpect(jsonPath("$.email").value("updated@test.com"));
-    }
+  @Test
+  void updateCurrentUser_updatesOwnProfile() throws Exception {
+    mockMvc
+        .perform(
+            patch("/api/v1/users/me")
+                .header("Authorization", bearerTokenFor(Role.CUSTOMER, "profile-update-user"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        new UpdateProfileRequest("updated-user", "updated@test.com"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.username").value("updated-user"))
+        .andExpect(jsonPath("$.email").value("updated@test.com"));
+  }
 
-    @Test
-    void getUsers_requiresAdmin() throws Exception {
-        mockMvc.perform(get("/api/v1/users")
-                        .header("Authorization", bearerTokenFor(Role.CUSTOMER, "user-list-member")))
-                .andExpect(status().isForbidden());
-    }
+  @Test
+  void getUsers_requiresAdmin() throws Exception {
+    mockMvc
+        .perform(
+            get("/api/v1/users")
+                .header("Authorization", bearerTokenFor(Role.CUSTOMER, "user-list-member")))
+        .andExpect(status().isForbidden());
+  }
 
-    @Test
-    void getUsers_asAdmin_returnsPagedUsers() throws Exception {
-        bearerTokenFor(Role.CUSTOMER, "paged-user-1");
-        mockMvc.perform(get("/api/v1/users")
-                        .header("Authorization", bearerTokenFor(Role.ADMIN, "user-list-admin")))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.page").value(0));
-    }
+  @Test
+  void getUsers_asAdmin_returnsPagedUsers() throws Exception {
+    bearerTokenFor(Role.CUSTOMER, "paged-user-1");
+    mockMvc
+        .perform(
+            get("/api/v1/users")
+                .header("Authorization", bearerTokenFor(Role.ADMIN, "user-list-admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content").isArray())
+        .andExpect(jsonPath("$.page").value(0));
+  }
 
-    @Test
-    void updateRole_asAdmin_changesUserRole() throws Exception {
-        User target = userRepository.save(new User("role-target", "role-target@test.com", passwordEncoder.encode("password123"), Role.CUSTOMER));
+  @Test
+  void updateRole_asAdmin_changesUserRole() throws Exception {
+    User target =
+        userRepository.save(
+            new User(
+                "role-target",
+                "role-target@test.com",
+                passwordEncoder.encode("password123"),
+                Role.CUSTOMER));
 
-        mockMvc.perform(patch("/api/v1/users/{id}/role", target.getId())
-                        .header("Authorization", bearerTokenFor(Role.ADMIN, "role-admin"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new UpdateUserRoleRequest(Role.ADMIN))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.role").value("ADMIN"));
-    }
+    mockMvc
+        .perform(
+            patch("/api/v1/users/{id}/role", target.getId())
+                .header("Authorization", bearerTokenFor(Role.ADMIN, "role-admin"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new UpdateUserRoleRequest(Role.ADMIN))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.role").value("ADMIN"));
+  }
 }

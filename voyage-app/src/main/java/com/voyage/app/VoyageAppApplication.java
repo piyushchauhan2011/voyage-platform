@@ -8,7 +8,7 @@ import org.springframework.cache.annotation.EnableCaching;
 @EnableCaching
 public class VoyageAppApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(VoyageAppApplication.class, args);
-	}
+  public static void main(String[] args) {
+    SpringApplication.run(VoyageAppApplication.class, args);
+  }
 }

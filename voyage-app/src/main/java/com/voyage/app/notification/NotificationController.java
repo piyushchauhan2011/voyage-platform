@@ -14,20 +14,22 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/notifications")
 public class NotificationController {
 
-    private final NotificationService notificationService;
+  private final NotificationService notificationService;
 
-    public NotificationController(NotificationService notificationService) {
-        this.notificationService = notificationService;
-    }
+  public NotificationController(NotificationService notificationService) {
+    this.notificationService = notificationService;
+  }
 
-    @GetMapping("/me")
-    public PageResponse<NotificationResponse> getMyNotifications(Authentication authentication,
-                                                                 @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
-        return PageResponse.from(notificationService.findForUser(authentication.getName(), pageable));
-    }
+  @GetMapping("/me")
+  public PageResponse<NotificationResponse> getMyNotifications(
+      Authentication authentication,
+      @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
+    return PageResponse.from(notificationService.findForUser(authentication.getName(), pageable));
+  }
 
-    @PatchMapping("/{notificationId}/read")
-    public NotificationResponse markRead(Authentication authentication, @PathVariable Long notificationId) {
-        return notificationService.markRead(authentication.getName(), notificationId);
-    }
+  @PatchMapping("/{notificationId}/read")
+  public NotificationResponse markRead(
+      Authentication authentication, @PathVariable Long notificationId) {
+    return notificationService.markRead(authentication.getName(), notificationId);
+  }
 }

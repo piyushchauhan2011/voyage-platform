@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/ui/jpa")
 public class JpaLabController {
 
-    @GetMapping
-    public String lab() {
-        return "jpa-lab";
-    }
+  @GetMapping
+  public String lab() {
+    return "jpa-lab";
+  }
 }

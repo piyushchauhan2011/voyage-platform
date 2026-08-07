@@ -16,53 +16,56 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;
-
 @Entity
-@Table(name = "room_inventory", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_room_inventory_hotel_date_type", columnNames = {"hotel_id", "inventory_date", "room_type"})
-})
+@Table(
+    name = "room_inventory",
+    uniqueConstraints = {
+      @UniqueConstraint(
+          name = "uk_room_inventory_hotel_date_type",
+          columnNames = {"hotel_id", "inventory_date", "room_type"})
+    })
 @Getter
 @Setter
 @NoArgsConstructor
 public class RoomInventory {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "hotel_id", nullable = false)
-    private Hotel hotel;
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "hotel_id", nullable = false)
+  private Hotel hotel;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "room_type", nullable = false)
-    @NotNull
-    private RoomType roomType;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "room_type", nullable = false)
+  @NotNull
+  private RoomType roomType;
 
-    @Column(name = "inventory_date", nullable = false)
-    @NotNull
-    private LocalDate date;
+  @Column(name = "inventory_date", nullable = false)
+  @NotNull
+  private LocalDate date;
 
-    @Column(name = "available_rooms", nullable = false)
-    @Min(0)
-    private int availableRooms;
+  @Column(name = "available_rooms", nullable = false)
+  @Min(0)
+  private int availableRooms;
 
-    public RoomInventory(Hotel hotel, RoomType roomType, LocalDate date, int availableRooms) {
-        this.hotel = hotel;
-        this.roomType = roomType;
-        this.date = date;
-        this.availableRooms = availableRooms;
+  public RoomInventory(Hotel hotel, RoomType roomType, LocalDate date, int availableRooms) {
+    this.hotel = hotel;
+    this.roomType = roomType;
+    this.date = date;
+    this.availableRooms = availableRooms;
+  }
+
+  @PrePersist
+  void validateAvailability() {
+    if (availableRooms < 0) {
+      throw new IllegalStateException("Inventory cannot be negative");
     }
-
-    @PrePersist
-    void validateAvailability() {
-        if (availableRooms < 0) {
-            throw new IllegalStateException("Inventory cannot be negative");
-        }
-    }
+  }
 }

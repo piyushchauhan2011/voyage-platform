@@ -60,9 +60,9 @@ class HotelControllerSecurityTest {
 
     @Test
     void createHotel_withUserRole_returns403() throws Exception {
-        // Authenticated but ROLE_USER cannot write hotels — only ROLE_ADMIN can
+        // Authenticated but ROLE_CUSTOMER cannot write hotels — only ROLE_ADMIN can
         mockMvc.perform(post("/api/v1/hotels")
-                        .header("Authorization", bearerTokenFor(Role.USER, "hotel-user-create"))
+                        .header("Authorization", bearerTokenFor(Role.CUSTOMER, "hotel-user-create"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new Hotel("Test Hotel", "Paris", 150.0))))
                 .andExpect(status().isForbidden());
@@ -93,7 +93,7 @@ class HotelControllerSecurityTest {
     @Test
     void deleteHotel_withUserRole_returns403() throws Exception {
         mockMvc.perform(delete("/api/v1/hotels/1")
-                        .header("Authorization", bearerTokenFor(Role.USER, "hotel-user-delete")))
+                        .header("Authorization", bearerTokenFor(Role.CUSTOMER, "hotel-user-delete")))
                 .andExpect(status().isForbidden());
     }
 }

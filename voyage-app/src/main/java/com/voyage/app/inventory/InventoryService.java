@@ -4,6 +4,7 @@ import com.voyage.app.exception.BookingNotAvailableException;
 import com.voyage.app.exception.ResourceNotFoundException;
 import com.voyage.app.hotel.Hotel;
 import com.voyage.app.hotel.HotelRepository;
+import com.voyage.app.security.HotelAccessService;
 import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.retry.annotation.Backoff;
@@ -19,10 +20,14 @@ public class InventoryService {
 
     private final RoomInventoryRepository roomInventoryRepository;
     private final HotelRepository hotelRepository;
+    private final HotelAccessService hotelAccessService;
 
-    public InventoryService(RoomInventoryRepository roomInventoryRepository, HotelRepository hotelRepository) {
+    public InventoryService(RoomInventoryRepository roomInventoryRepository,
+                            HotelRepository hotelRepository,
+                            HotelAccessService hotelAccessService) {
         this.roomInventoryRepository = roomInventoryRepository;
         this.hotelRepository = hotelRepository;
+        this.hotelAccessService = hotelAccessService;
     }
 
     @Transactional
@@ -41,6 +46,7 @@ public class InventoryService {
 
     @Transactional
     public InventoryResponse createInventoryResponse(Long hotelId, RoomType roomType, LocalDate date, int availableRooms) {
+        hotelAccessService.assertCanWriteInventory(hotelId);
         return toResponse(createInventory(hotelId, roomType, date, availableRooms));
     }
 
@@ -83,7 +89,11 @@ public class InventoryService {
 
     @Transactional
     public InventoryResponse updateAvailabilityResponse(Long inventoryId, int availableRooms) {
-        return toResponse(updateAvailability(inventoryId, availableRooms));
+        RoomInventory inventory = roomInventoryRepository.findById(inventoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Inventory not found: " + inventoryId));
+        hotelAccessService.assertCanWriteInventory(inventory.getHotel().getId());
+        inventory.setAvailableRooms(availableRooms);
+        return toResponse(roomInventoryRepository.save(inventory));
     }
 
     private InventoryResponse toResponse(RoomInventory inventory) {

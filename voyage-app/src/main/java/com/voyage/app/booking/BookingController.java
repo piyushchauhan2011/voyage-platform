@@ -1,7 +1,6 @@
 package com.voyage.app.booking;
 
 import com.voyage.app.common.PageResponse;
-import com.voyage.app.user.Role;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -44,21 +43,18 @@ public class BookingController {
                                                      @RequestParam(required = false) LocalDate checkInFrom,
                                                      @RequestParam(required = false) LocalDate checkInTo,
                                                      @PageableDefault(size = 20, sort = "checkIn") Pageable pageable) {
-        boolean admin = authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_" + Role.ADMIN.name()));
-        Long effectiveUserId = admin ? userId : bookingService.findUserIdByUsername(authentication.getName());
-        BookingSearchCriteria criteria = new BookingSearchCriteria(effectiveUserId, hotelId, status, checkInFrom, checkInTo);
+        BookingSearchCriteria criteria = bookingService.resolveSearchCriteria(
+                authentication.getName(), userId, hotelId, status, checkInFrom, checkInTo);
         return PageResponse.from(bookingService.searchWithSpecifications(criteria, pageable).map(BookingResponse::from));
     }
 
     @GetMapping("/{bookingId}")
     public BookingResponse getBooking(Authentication authentication, @PathVariable Long bookingId) {
-        boolean admin = authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_" + Role.ADMIN.name()));
-        return BookingResponse.from(bookingService.getById(bookingId, authentication.getName(), admin));
+        return BookingResponse.from(bookingService.getById(bookingId, authentication.getName()));
     }
 
     @DeleteMapping("/{bookingId}")
     public BookingResponse cancelBooking(Authentication authentication, @PathVariable Long bookingId) {
-        boolean admin = authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_" + Role.ADMIN.name()));
-        return BookingResponse.from(bookingService.cancelBooking(bookingId, authentication.getName(), admin));
+        return BookingResponse.from(bookingService.cancelBooking(bookingId, authentication.getName()));
     }
 }

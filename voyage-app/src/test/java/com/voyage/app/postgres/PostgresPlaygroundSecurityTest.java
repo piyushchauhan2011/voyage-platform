@@ -42,7 +42,7 @@ class PostgresPlaygroundSecurityTest {
     @Test
     void seed_withUserRole_returns403() throws Exception {
         mockMvc.perform(post("/api/postgres/playground/seed")
-                        .header("Authorization", bearerTokenFor(Role.USER, "pg-lab-user")))
+                        .header("Authorization", bearerTokenFor(Role.CUSTOMER, "pg-lab-user")))
                 .andExpect(status().isForbidden());
     }
 

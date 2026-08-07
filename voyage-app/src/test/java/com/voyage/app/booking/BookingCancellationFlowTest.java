@@ -52,7 +52,7 @@ class BookingCancellationFlowTest {
         hotelRepository.deleteAll();
 
         hotel = hotelRepository.save(new Hotel("Cancel Hotel", "Lisbon", 190.0));
-        user = userRepository.save(new User("cancel-user", "cancel-user@test.com", "encoded", Role.USER));
+        user = userRepository.save(new User("cancel-user", "cancel-user@test.com", "encoded", Role.CUSTOMER));
         checkIn = LocalDate.now().plusDays(3);
         checkOut = checkIn.plusDays(2);
 
@@ -67,7 +67,7 @@ class BookingCancellationFlowTest {
                 new CreateBookingRequest(hotel.getId(), RoomType.SUITE, checkIn, checkOut, "approve")
         );
 
-        Booking cancelled = bookingService.cancelBooking(booking.getId(), user.getUsername(), false);
+        Booking cancelled = bookingService.cancelBooking(booking.getId(), user.getUsername());
 
         assertEquals(BookingStatus.CANCELLED, cancelled.getStatus());
         assertEquals(1, roomInventoryRepository.findByHotelIdAndDateAndRoomType(hotel.getId(), checkIn, RoomType.SUITE).orElseThrow().getAvailableRooms());

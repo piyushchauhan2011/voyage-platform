@@ -1,7 +1,13 @@
 package com.voyage.app.hotel;
 
+import com.voyage.app.exception.ForbiddenException;
+import com.voyage.app.exception.ResourceNotFoundException;
 import com.voyage.app.kafka.HotelEventPublisher;
 import com.voyage.app.kafka.HotelEventType;
+import com.voyage.app.security.HotelAccessService;
+import com.voyage.app.user.Role;
+import com.voyage.app.user.User;
+import com.voyage.app.user.UserRepository;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -11,6 +17,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -27,10 +34,17 @@ public class HotelService {
 
     private final HotelRepository hotelRepository;
     private final HotelEventPublisher hotelEventPublisher;
+    private final HotelAccessService hotelAccessService;
+    private final UserRepository userRepository;
 
-    public HotelService(HotelRepository hotelRepository, ObjectProvider<HotelEventPublisher> hotelEventPublisherProvider) {
+    public HotelService(HotelRepository hotelRepository,
+                        ObjectProvider<HotelEventPublisher> hotelEventPublisherProvider,
+                        HotelAccessService hotelAccessService,
+                        UserRepository userRepository) {
         this.hotelRepository = hotelRepository;
         this.hotelEventPublisher = hotelEventPublisherProvider.getIfAvailable();
+        this.hotelAccessService = hotelAccessService;
+        this.userRepository = userRepository;
     }
 
     @Cacheable(cacheNames = "hotelById", key = "#id")
@@ -55,37 +69,88 @@ public class HotelService {
         return hotelRepository.findAll();
     }
 
+    @Transactional
     @Caching(
             put = @CachePut(cacheNames = "hotelById", key = "#result.id"),
             evict = @CacheEvict(cacheNames = "hotelsByCity", allEntries = true)
     )
     public Hotel save(Hotel hotel) {
+        User actor = hotelAccessService.requireCurrentUser();
+        hotelAccessService.assertCanCreateHotel(actor);
+
+        // Clients must not set privileged ABAC fields via the create body
+        hotel.setSaasPlan(SaasPlan.FREE);
+        if (actor.getRole() == Role.HOTEL_MANAGER) {
+            hotel.setManager(actor);
+        } else if (hotel.getManager() != null && hotel.getManager().getId() != null) {
+            User manager = userRepository.findById(hotel.getManager().getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Manager not found"));
+            if (manager.getRole() != Role.HOTEL_MANAGER && manager.getRole() != Role.ADMIN) {
+                throw new ForbiddenException("Assigned manager must have HOTEL_MANAGER or ADMIN role");
+            }
+            hotel.setManager(manager);
+        } else {
+            hotel.setManager(null);
+        }
+
         Hotel savedHotel = hotelRepository.save(hotel);
         publishEvent(HotelEventType.CREATED, savedHotel);
         return savedHotel;
     }
 
+    @Transactional
     @Caching(
             put = @CachePut(cacheNames = "hotelById", key = "#result.id"),
             evict = @CacheEvict(cacheNames = "hotelsByCity", allEntries = true)
     )
     public Hotel update(Long id, Hotel updates) {
+        hotelAccessService.assertCanManageHotel(id);
         Hotel hotel = findById(id);
         hotel.setName(updates.getName());
         hotel.setCity(updates.getCity());
         hotel.setPricePerNight(updates.getPricePerNight());
         hotel.setDescription(updates.getDescription());
         hotel.setAmenities(updates.getAmenities());
+        // manager + saasPlan only change via updateManagement
         Hotel updatedHotel = hotelRepository.save(hotel);
         publishEvent(HotelEventType.UPDATED, updatedHotel);
         return updatedHotel;
     }
 
+    @Transactional
+    @Caching(
+            put = @CachePut(cacheNames = "hotelById", key = "#result.id"),
+            evict = @CacheEvict(cacheNames = "hotelsByCity", allEntries = true)
+    )
+    public Hotel updateManagement(Long id, UpdateHotelManagementRequest request) {
+        User actor = hotelAccessService.requireCurrentUser();
+        if (!hotelAccessService.isAdmin(actor)) {
+            throw new ForbiddenException("Only ADMIN can update hotel management and SaaS plan");
+        }
+        Hotel hotel = findById(id);
+        if (request.managerId() != null) {
+            User manager = userRepository.findById(request.managerId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Manager not found: " + request.managerId()));
+            if (manager.getRole() != Role.HOTEL_MANAGER && manager.getRole() != Role.ADMIN) {
+                throw new ForbiddenException("Assigned user must have HOTEL_MANAGER or ADMIN role");
+            }
+            hotel.setManager(manager);
+        } else {
+            hotel.setManager(null);
+        }
+        hotel.setSaasPlan(request.saasPlan());
+        Hotel updatedHotel = hotelRepository.save(hotel);
+        publishEvent(HotelEventType.UPDATED, updatedHotel);
+        return updatedHotel;
+    }
+
+    @Transactional
     @Caching(evict = {
             @CacheEvict(cacheNames = "hotelById", key = "#id"),
             @CacheEvict(cacheNames = "hotelsByCity", allEntries = true)
     })
     public void delete(Long id) {
+        hotelAccessService.assertCanManageHotel(id);
         Hotel hotel = findById(id);
         hotelRepository.deleteById(id);
         publishEvent(HotelEventType.DELETED, hotel);

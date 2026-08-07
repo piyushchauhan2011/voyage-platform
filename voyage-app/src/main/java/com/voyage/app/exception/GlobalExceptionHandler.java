@@ -34,6 +34,11 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.UNAUTHORIZED, exception.getMessage(), request);
     }
 
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiError> handleForbidden(ForbiddenException exception, HttpServletRequest request) {
+        return build(HttpStatus.FORBIDDEN, exception.getMessage(), request);
+    }
+
     @ExceptionHandler(BookingNotAvailableException.class)
     public ResponseEntity<ApiError> handleBookingNotAvailable(BookingNotAvailableException exception, HttpServletRequest request) {
         return build(HttpStatus.CONFLICT, exception.getMessage(), request);

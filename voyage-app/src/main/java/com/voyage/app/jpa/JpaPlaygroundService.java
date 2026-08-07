@@ -458,7 +458,7 @@ public class JpaPlaygroundService {
                         LAB_USER,
                         LAB_USER + "@voyage.local",
                         passwordEncoder.encode("password123"),
-                        Role.USER
+                        Role.CUSTOMER
                 )));
 
         Hotel hotel = hotelRepository.findAll().stream()

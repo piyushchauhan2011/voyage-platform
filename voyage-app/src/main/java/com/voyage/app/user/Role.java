@@ -1,6 +1,7 @@
 package com.voyage.app.user;
 
 public enum Role {
-    USER,
+    CUSTOMER,
+    HOTEL_MANAGER,
     ADMIN
 }

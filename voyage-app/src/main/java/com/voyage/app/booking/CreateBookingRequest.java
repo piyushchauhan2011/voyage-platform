@@ -12,6 +12,18 @@ public record CreateBookingRequest(
         @NotNull RoomType roomType,
         @NotNull @Future LocalDate checkIn,
         @NotNull @Future LocalDate checkOut,
-        @NotBlank String paymentToken
+        @NotBlank String paymentToken,
+        RatePlan ratePlan
 ) {
+    public CreateBookingRequest(Long hotelId,
+                                RoomType roomType,
+                                LocalDate checkIn,
+                                LocalDate checkOut,
+                                String paymentToken) {
+        this(hotelId, roomType, checkIn, checkOut, paymentToken, null);
+    }
+
+    public RatePlan ratePlanOrDefault() {
+        return ratePlan == null ? RatePlan.FLEXIBLE : ratePlan;
+    }
 }

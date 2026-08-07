@@ -58,21 +58,26 @@ Optional but useful during Phase 6:
 
 ## Security model to test
 
-- `POST /api/v1/auth/register` is public
+- `POST /api/v1/auth/register` is public (creates `ROLE_CUSTOMER`)
 - `POST /api/v1/auth/login` is public
 - `POST /api/v1/auth/refresh` is public
 - `POST /api/v1/auth/logout` is public
 - `GET /api/v1/hotels/**` is public
-- `POST /api/v1/hotels` requires `ROLE_ADMIN`
-- `PUT /api/v1/hotels/{id}` requires `ROLE_ADMIN`
-- `DELETE /api/v1/hotels/{id}` requires `ROLE_ADMIN`
+- Hotel / inventory **writes** require `ROLE_ADMIN` or `ROLE_HOTEL_MANAGER` (ABAC then checks ownership + SaaS plan)
+- `PATCH /api/v1/hotels/{id}/management` requires `ROLE_ADMIN` (assign manager / set `FREE|PRO|ENTERPRISE`)
+- `/api/v1/payments/**` requires authentication (view/refund gated by ownership, rate plan, SaaS plan)
 - `GET /ui/kafka` is public
 - `GET /ui/kafka/status` is public and returns recently processed Kafka events
 - `GET /ui/kafka/history` is public and shows the full processed and dead-letter event history
 - `GET /ui/kafka/dead-letters` is public and returns recent dead-letter records
 
-Important detail: registering a user always creates `ROLE_USER`, not `ROLE_ADMIN`.
-To test write endpoints successfully, promote a user in Postgres.
+Important detail: registering a user always creates `ROLE_CUSTOMER`. Promote to `HOTEL_MANAGER` or `ADMIN` in Postgres (or via `manage_qa_user.sh --role ...`).
+
+ABAC + payments demo:
+
+```bash
+bash api_manual_checks/run_abac_payment_flow.sh
+```
 
 ## Manual flow
 
@@ -371,7 +376,7 @@ bash api_manual_checks/manage_qa_user.sh <action> [options]
 Supported actions:
 
 - `create` registers a QA user through `POST /api/v1/auth/register`
-- `promote` updates the user to `ROLE_ADMIN` in Postgres
+- `promote` updates the user role in Postgres (default `ADMIN`; pass `--role HOTEL_MANAGER` or `CUSTOMER`)
 - `delete` removes the user and any refresh tokens in Postgres
 
 Common examples:
@@ -422,12 +427,18 @@ What the script verifies:
 - registration works
 - login returns access + refresh tokens
 - hotel reads are public
-- `ROLE_USER` receives `403` on hotel create
+- `ROLE_CUSTOMER` receives `403` on hotel create
 - promoted admin can create, update, and delete a hotel
 - Kafka consumer status records `CREATED`, `UPDATED`, and `DELETED` hotel events
 - exhausted consumer failures are forwarded to the dead-letter topic and appear in the dead-letter status feed
 - refresh returns a new access token
 - logout revokes the refresh token
+
+For ABAC (manager ownership, SaaS plans, rate plans, mock refunds):
+
+```bash
+bash api_manual_checks/run_abac_payment_flow.sh
+```
 
 ## Troubleshooting
 

@@ -110,7 +110,7 @@ HEALTH_RESPONSE="$(request GET "/actuator/health" "")"
 expect_status "$HEALTH_RESPONSE" "200"
 printf '%s' "$HEALTH_RESPONSE" | json_body | jq
 
-log "Registering a new ROLE_USER account: $USERNAME"
+log "Registering a new ROLE_CUSTOMER account: $USERNAME"
 REGISTER_RESPONSE="$(request POST "/api/v1/auth/register" "{\"username\":\"$USERNAME\",\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}")"
 expect_status "$REGISTER_RESPONSE" "201"
 printf '%s' "$REGISTER_RESPONSE" | json_body | jq
@@ -128,7 +128,7 @@ GET_HOTELS_RESPONSE="$(request GET "/api/v1/hotels" "")"
 expect_status "$GET_HOTELS_RESPONSE" "200"
 printf '%s' "$GET_HOTELS_RESPONSE" | json_body | jq
 
-log "Verifying ROLE_USER cannot create a hotel"
+log "Verifying ROLE_CUSTOMER cannot create a hotel"
 FORBIDDEN_CREATE_RESPONSE="$(request POST "/api/v1/hotels" "{\"name\":\"Forbidden Hotel\",\"city\":\"Paris\",\"pricePerNight\":180}" -H "Authorization: Bearer $ACCESS_TOKEN")"
 expect_status "$FORBIDDEN_CREATE_RESPONSE" "403"
 printf '%s' "$FORBIDDEN_CREATE_RESPONSE" | json_body | jq

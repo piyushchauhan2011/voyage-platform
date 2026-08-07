@@ -12,6 +12,7 @@ USERNAME=""
 EMAIL=""
 PASSWORD="$DEFAULT_PASSWORD"
 PROMOTE_AFTER_CREATE="false"
+TARGET_ROLE="ADMIN"
 
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -36,14 +37,15 @@ Usage:
 
 Actions:
   create     Register a QA user through /api/v1/auth/register
-  promote    Promote an existing user to ROLE_ADMIN in Postgres
+  promote    Promote an existing user to a role in Postgres (default ADMIN)
   delete     Delete a user and any refresh tokens in Postgres
 
 Options:
   --username <value>     Username to manage
   --email <value>        Email for create; defaults to <username>@test.com
   --password <value>     Password for create; defaults to password123
-  --promote              Only valid with create; immediately promote the user to ADMIN
+  --role <value>         Role for promote/create --promote: ADMIN | HOTEL_MANAGER | CUSTOMER (default ADMIN)
+  --promote              Only valid with create; immediately set role (see --role)
   --help                 Show this help text
 
 Environment overrides:
@@ -52,7 +54,9 @@ Environment overrides:
 Examples:
   bash api_manual_checks/manage_qa_user.sh create --username qa_user_1
   bash api_manual_checks/manage_qa_user.sh create --username qa_admin --promote
+  bash api_manual_checks/manage_qa_user.sh create --username qa_mgr --promote --role HOTEL_MANAGER
   bash api_manual_checks/manage_qa_user.sh promote --username qa_user_1
+  bash api_manual_checks/manage_qa_user.sh promote --username qa_mgr --role HOTEL_MANAGER
   bash api_manual_checks/manage_qa_user.sh delete --username qa_user_1
 EOF
 }
@@ -101,6 +105,13 @@ username_required() {
   fi
 }
 
+validate_role() {
+  case "$TARGET_ROLE" in
+    ADMIN|HOTEL_MANAGER|CUSTOMER) ;;
+    *) fail "Invalid --role '$TARGET_ROLE' (use ADMIN, HOTEL_MANAGER, or CUSTOMER)" ;;
+  esac
+}
+
 create_user() {
   username_required
 
@@ -121,10 +132,11 @@ create_user() {
 
 promote_user() {
   username_required
+  validate_role
 
-  log "Promoting '$USERNAME' to ADMIN in Postgres"
+  log "Setting '$USERNAME' role to $TARGET_ROLE in Postgres"
   docker exec -i "$POSTGRES_CONTAINER" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
-    -c "update users set role = 'ADMIN' where username = '$(sql_escape "$USERNAME")';" >/dev/null
+    -c "update users set role = '$(sql_escape "$TARGET_ROLE")' where username = '$(sql_escape "$USERNAME")';" >/dev/null
 }
 
 delete_user() {
@@ -168,6 +180,10 @@ while (($# > 0)); do
       ;;
     --password)
       PASSWORD="$2"
+      shift 2
+      ;;
+    --role)
+      TARGET_ROLE="$2"
       shift 2
       ;;
     --promote)

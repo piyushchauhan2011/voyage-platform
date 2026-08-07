@@ -61,6 +61,10 @@ public class Booking {
     @Column(nullable = false)
     private BookingStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "rate_plan", nullable = false)
+    private RatePlan ratePlan = RatePlan.FLEXIBLE;
+
     @Column(name = "total_price", nullable = false, precision = 12, scale = 2)
     private BigDecimal totalPrice;
 
@@ -74,12 +78,24 @@ public class Booking {
                    LocalDate checkOut,
                    BookingStatus status,
                    BigDecimal totalPrice) {
+        this(user, hotel, roomType, checkIn, checkOut, status, RatePlan.FLEXIBLE, totalPrice);
+    }
+
+    public Booking(User user,
+                   Hotel hotel,
+                   RoomType roomType,
+                   LocalDate checkIn,
+                   LocalDate checkOut,
+                   BookingStatus status,
+                   RatePlan ratePlan,
+                   BigDecimal totalPrice) {
         this.user = user;
         this.hotel = hotel;
         this.roomType = roomType;
         this.checkIn = checkIn;
         this.checkOut = checkOut;
         this.status = status;
+        this.ratePlan = ratePlan == null ? RatePlan.FLEXIBLE : ratePlan;
         this.totalPrice = totalPrice;
     }
 
@@ -87,6 +103,9 @@ public class Booking {
     void markCreatedAt() {
         if (createdAt == null) {
             createdAt = Instant.now();
+        }
+        if (ratePlan == null) {
+            ratePlan = RatePlan.FLEXIBLE;
         }
     }
 }

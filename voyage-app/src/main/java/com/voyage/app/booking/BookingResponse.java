@@ -15,6 +15,7 @@ public record BookingResponse(
         LocalDate checkIn,
         LocalDate checkOut,
         BookingStatus status,
+        RatePlan ratePlan,
         BigDecimal totalPrice,
         Instant createdAt
 ) {
@@ -28,6 +29,7 @@ public record BookingResponse(
                 booking.getCheckIn(),
                 booking.getCheckOut(),
                 booking.getStatus(),
+                booking.getRatePlan(),
                 booking.getTotalPrice(),
                 booking.getCreatedAt()
         );

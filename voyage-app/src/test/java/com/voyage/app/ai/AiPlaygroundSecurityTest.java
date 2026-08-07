@@ -45,7 +45,7 @@ class AiPlaygroundSecurityTest {
     @Test
     void assistant_withUserRole_returns403() throws Exception {
         mockMvc.perform(post("/api/ai/playground/assistant")
-                        .header("Authorization", bearerTokenFor(Role.USER, "ai-lab-user")))
+                        .header("Authorization", bearerTokenFor(Role.CUSTOMER, "ai-lab-user")))
                 .andExpect(status().isForbidden());
     }
 
@@ -58,7 +58,7 @@ class AiPlaygroundSecurityTest {
     @Test
     void ingest_withUserRole_returns403() throws Exception {
         mockMvc.perform(post("/api/ai/playground/ingest")
-                        .header("Authorization", bearerTokenFor(Role.USER, "ai-lab-ingest-user")))
+                        .header("Authorization", bearerTokenFor(Role.CUSTOMER, "ai-lab-ingest-user")))
                 .andExpect(status().isForbidden());
     }
 

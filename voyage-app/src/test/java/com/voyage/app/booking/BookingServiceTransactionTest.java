@@ -52,7 +52,7 @@ class BookingServiceTransactionTest {
         hotelRepository.deleteAll();
 
         hotel = hotelRepository.save(new Hotel("Transaction Hotel", "Paris", 180.0));
-        user = userRepository.save(new User("booking-user", "booking-user@test.com", "encoded", Role.USER));
+        user = userRepository.save(new User("booking-user", "booking-user@test.com", "encoded", Role.CUSTOMER));
         checkIn = LocalDate.now().plusDays(2);
         checkOut = checkIn.plusDays(2);
 

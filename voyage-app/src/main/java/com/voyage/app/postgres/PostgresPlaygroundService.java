@@ -326,7 +326,7 @@ public class PostgresPlaygroundService {
         jdbcTemplate.update("""
                 INSERT INTO users (username, email, password, role)
                 VALUES (?, ?, ?, ?)
-                """, LAB_USER, LAB_USER + "@voyage.local", passwordEncoder.encode("password123"), "USER");
+                """, LAB_USER, LAB_USER + "@voyage.local", passwordEncoder.encode("password123"), "CUSTOMER");
     }
 
     private int ensureLabHotels() {

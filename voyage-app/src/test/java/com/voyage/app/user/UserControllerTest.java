@@ -36,16 +36,16 @@ class UserControllerTest {
     @Test
     void getCurrentUser_returnsOwnProfile() throws Exception {
         mockMvc.perform(get("/api/v1/users/me")
-                        .header("Authorization", bearerTokenFor(Role.USER, "profile-user")))
+                        .header("Authorization", bearerTokenFor(Role.CUSTOMER, "profile-user")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("profile-user"))
-                .andExpect(jsonPath("$.role").value("USER"));
+                .andExpect(jsonPath("$.role").value("CUSTOMER"));
     }
 
     @Test
     void updateCurrentUser_updatesOwnProfile() throws Exception {
         mockMvc.perform(patch("/api/v1/users/me")
-                        .header("Authorization", bearerTokenFor(Role.USER, "profile-update-user"))
+                        .header("Authorization", bearerTokenFor(Role.CUSTOMER, "profile-update-user"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new UpdateProfileRequest("updated-user", "updated@test.com"))))
                 .andExpect(status().isOk())
@@ -56,13 +56,13 @@ class UserControllerTest {
     @Test
     void getUsers_requiresAdmin() throws Exception {
         mockMvc.perform(get("/api/v1/users")
-                        .header("Authorization", bearerTokenFor(Role.USER, "user-list-member")))
+                        .header("Authorization", bearerTokenFor(Role.CUSTOMER, "user-list-member")))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void getUsers_asAdmin_returnsPagedUsers() throws Exception {
-        bearerTokenFor(Role.USER, "paged-user-1");
+        bearerTokenFor(Role.CUSTOMER, "paged-user-1");
         mockMvc.perform(get("/api/v1/users")
                         .header("Authorization", bearerTokenFor(Role.ADMIN, "user-list-admin")))
                 .andExpect(status().isOk())
@@ -72,7 +72,7 @@ class UserControllerTest {
 
     @Test
     void updateRole_asAdmin_changesUserRole() throws Exception {
-        User target = userRepository.save(new User("role-target", "role-target@test.com", passwordEncoder.encode("password123"), Role.USER));
+        User target = userRepository.save(new User("role-target", "role-target@test.com", passwordEncoder.encode("password123"), Role.CUSTOMER));
 
         mockMvc.perform(patch("/api/v1/users/{id}/role", target.getId())
                         .header("Authorization", bearerTokenFor(Role.ADMIN, "role-admin"))

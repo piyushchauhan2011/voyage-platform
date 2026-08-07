@@ -49,7 +49,7 @@ public class AuthService {
         }
         // BCrypt hashes the password — the plaintext is never stored
         User user = new User(request.username(), request.email(),
-                passwordEncoder.encode(request.password()), Role.USER);
+                passwordEncoder.encode(request.password()), Role.CUSTOMER);
         userRepository.save(user);
         return buildAuthResponse(user);
     }

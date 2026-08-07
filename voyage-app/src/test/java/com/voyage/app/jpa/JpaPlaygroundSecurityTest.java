@@ -41,7 +41,7 @@ class JpaPlaygroundSecurityTest {
     @Test
     void seed_withUserRole_returns403() throws Exception {
         mockMvc.perform(post("/api/jpa/playground/seed")
-                        .header("Authorization", bearerTokenFor(Role.USER, "jpa-lab-user")))
+                        .header("Authorization", bearerTokenFor(Role.CUSTOMER, "jpa-lab-user")))
                 .andExpect(status().isForbidden());
     }
 

@@ -49,7 +49,7 @@ class BookingControllerCancellationTest {
     @BeforeEach
     void setUp() {
         hotel = hotelRepository.save(new Hotel("Cancelable Hotel", "Madrid", 175.0));
-        User user = userRepository.save(new User("cancel-controller-user", "cancel-controller-user@test.com", passwordEncoder.encode("password123"), Role.USER));
+        User user = userRepository.save(new User("cancel-controller-user", "cancel-controller-user@test.com", passwordEncoder.encode("password123"), Role.CUSTOMER));
         userToken = "Bearer " + jwtService.generateToken(user);
         checkIn = LocalDate.now().plusDays(4);
         inventoryService.createInventory(hotel.getId(), RoomType.DOUBLE, checkIn, 1);

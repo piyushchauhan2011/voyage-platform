@@ -40,7 +40,7 @@ class RabbitMqPlaygroundSecurityTest {
     @Test
     void setup_withUserRole_returns403() throws Exception {
         mockMvc.perform(post("/api/rabbitmq/playground/setup")
-                        .header("Authorization", bearerTokenFor(Role.USER, "rmq-lab-user")))
+                        .header("Authorization", bearerTokenFor(Role.CUSTOMER, "rmq-lab-user")))
                 .andExpect(status().isForbidden());
     }
 }

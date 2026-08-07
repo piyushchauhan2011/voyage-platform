@@ -30,6 +30,9 @@ public class BookingCriteriaRepository {
         if (criteria.hotelId() != null) {
             predicates.add(builder.equal(root.get("hotel").get("id"), criteria.hotelId()));
         }
+        if (criteria.hotelIds() != null && !criteria.hotelIds().isEmpty()) {
+            predicates.add(root.get("hotel").get("id").in(criteria.hotelIds()));
+        }
         if (criteria.status() != null) {
             predicates.add(builder.equal(root.get("status"), criteria.status()));
         }

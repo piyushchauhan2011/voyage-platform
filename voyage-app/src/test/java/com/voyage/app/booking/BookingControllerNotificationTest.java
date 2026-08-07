@@ -46,7 +46,7 @@ class BookingControllerNotificationTest {
     @BeforeEach
     void setUp() {
         hotel = hotelRepository.save(new Hotel("Booking Hotel", "Rome", 210.0));
-        User user = userRepository.save(new User("booking-controller-user", "booking-controller-user@test.com", passwordEncoder.encode("password123"), Role.USER));
+        User user = userRepository.save(new User("booking-controller-user", "booking-controller-user@test.com", passwordEncoder.encode("password123"), Role.CUSTOMER));
         userToken = "Bearer " + jwtService.generateToken(user);
         LocalDate checkIn = LocalDate.now().plusDays(2);
         inventoryService.createInventory(hotel.getId(), RoomType.DOUBLE, checkIn, 2);

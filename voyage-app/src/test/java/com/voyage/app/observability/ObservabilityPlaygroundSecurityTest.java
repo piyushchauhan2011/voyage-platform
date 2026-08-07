@@ -45,7 +45,7 @@ class ObservabilityPlaygroundSecurityTest {
     @Test
     void cpuSpike_withUserRole_returns403() throws Exception {
         mockMvc.perform(post("/api/observability/playground/cpu-spike")
-                        .header("Authorization", bearerTokenFor(Role.USER, "obs-lab-user")))
+                        .header("Authorization", bearerTokenFor(Role.CUSTOMER, "obs-lab-user")))
                 .andExpect(status().isForbidden());
     }
 

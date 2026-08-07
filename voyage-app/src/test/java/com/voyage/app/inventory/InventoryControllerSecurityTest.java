@@ -54,7 +54,7 @@ class InventoryControllerSecurityTest {
         CreateInventoryRequest request = new CreateInventoryRequest(hotel.getId(), RoomType.SINGLE, LocalDate.now().plusDays(1), 5);
 
         mockMvc.perform(post("/api/v1/inventory")
-                        .header("Authorization", bearerTokenFor(Role.USER, "inventory-user"))
+                        .header("Authorization", bearerTokenFor(Role.CUSTOMER, "inventory-user"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());

@@ -117,6 +117,30 @@ Instantiation → Dependency injection → @PostConstruct → [ready] → @PreDe
 
 `HotelNotFoundException.java` — `@ResponseStatus(NOT_FOUND)`: the simplest way to map an exception to an HTTP status without a global `@ControllerAdvice`.
 
+### Phase 4 — Security, ABAC, plans, payments
+
+JWT auth is already in place (`/api/v1/auth/**`). Phase 4 completion adds attribute-based access on top of roles:
+
+| Role | Typical access |
+|---|---|
+| `CUSTOMER` | Book hotels, view/cancel own bookings, view own payments |
+| `HOTEL_MANAGER` | Manage **owned** hotels; inventory/refunds gated by hotel SaaS plan |
+| `ADMIN` | Platform-wide; assign managers; set SaaS plans; labs |
+
+**Hotel SaaS plans** (`FREE` / `PRO` / `ENTERPRISE`) live on `Hotel.saasPlan` — gate max hotels per manager, inventory writes, and manager refunds. Admin upgrades via `PATCH /api/v1/hotels/{id}/management`.
+
+**Booking rate plans** (`FLEXIBLE` / `NON_REFUNDABLE`) live on `Booking.ratePlan` — NON_REFUNDABLE is 15% off and blocks customer refunds. FLEXIBLE auto-refunds on cancel.
+
+**Mock payments** — charge stays inside the booking TX (`paymentToken=decline` fails). REST:
+
+```text
+GET  /api/v1/payments/{id}
+GET  /api/v1/payments?bookingId=
+POST /api/v1/payments/{id}/refund
+```
+
+Manual demo: `bash api_manual_checks/run_abac_payment_flow.sh`
+
 ### Spring Data JPA
 `Hotel.java` — entity lifecycle: `NEW → MANAGED → DETACHED → REMOVED`.
 
@@ -669,7 +693,7 @@ This repo is structured to grow with the learning plan:
 
 - **Phase 1 (now)** — `java-mastery`: OOP, Collections, Streams, JVM, Multithreading
 - **Phase 2–3 (now)** — `voyage-app`: Spring Core, REST, JPA
-- **Phase 4** — add Spring Security + JWT to `voyage-app`
+- **Phase 4 (complete)** — Spring Security + JWT, ABAC roles (`CUSTOMER` / `HOTEL_MANAGER` / `ADMIN`), hotel SaaS plans, booking rate plans, mock payments
 - **Phase 5 (complete)** — Kafka producer/consumer + Thymeleaf event dashboard for hotel mutations
 - **Phase 6 (in progress)** — Redis-backed hotel caching + Redis playground for Strings, Hashes, Lists, Sets, Sorted Sets, TTL, Pub/Sub, and locks
 - **Phase 7 (complete)** — `voyage-app/Dockerfile` (multi-stage) + full Kubernetes deployment in `k8s/`

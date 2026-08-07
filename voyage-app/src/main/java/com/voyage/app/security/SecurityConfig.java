@@ -6,6 +6,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -27,9 +28,13 @@ import jakarta.servlet.DispatcherType;
  *   → ExceptionTranslationFilter    (routes AuthenticationException→401, AccessDeniedException→403)
  *   → AuthorizationFilter           (enforces requestMatchers rules)
  *   → DispatcherServlet → Controller
+ *
+ * Coarse role gates live here; resource attributes (hotel ownership, SaaS plan, rate plan)
+ * are enforced in {@link HotelAccessService}.
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
@@ -76,16 +81,18 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PATCH, "/api/v1/users/me").authenticated()
                 .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/v1/inventory/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/v1/inventory/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/v1/inventory/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/inventory/**").hasAnyRole("ADMIN", "HOTEL_MANAGER")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/inventory/**").hasAnyRole("ADMIN", "HOTEL_MANAGER")
                 .requestMatchers("/api/v1/bookings/**").authenticated()
+                .requestMatchers("/api/v1/payments/**").authenticated()
                 .requestMatchers("/api/v1/notifications/**").authenticated()
                 // Hotel reads are public — no account required to browse
                 .requestMatchers(HttpMethod.GET, "/api/v1/hotels/**").permitAll()
-                // Hotel writes are restricted to admins
-                .requestMatchers(HttpMethod.POST, "/api/v1/hotels/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/v1/hotels/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/v1/hotels/**").hasRole("ADMIN")
+                // Management patch is admin-only; other writes allow managers (ABAC in service)
+                .requestMatchers(HttpMethod.PATCH, "/api/v1/hotels/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/hotels/**").hasAnyRole("ADMIN", "HOTEL_MANAGER")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/hotels/**").hasAnyRole("ADMIN", "HOTEL_MANAGER")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/hotels/**").hasAnyRole("ADMIN", "HOTEL_MANAGER")
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex

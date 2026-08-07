@@ -63,6 +63,13 @@ public class HotelController {
         return hotelService.update(id, hotel);
     }
 
+    /** Admin-only: assign manager and/or upgrade SaaS plan (ABAC attributes). */
+    @PatchMapping("/{id}/management")
+    public Hotel updateManagement(@PathVariable Long id,
+                                  @Valid @RequestBody UpdateHotelManagementRequest request) {
+        return hotelService.updateManagement(id, request);
+    }
+
     // DELETE /api/hotels/1
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

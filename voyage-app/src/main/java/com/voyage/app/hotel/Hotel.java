@@ -1,5 +1,8 @@
 package com.voyage.app.hotel;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.voyage.app.user.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -16,7 +19,8 @@ import lombok.Setter;
  */
 @Entity
 @Table(name = "hotels", indexes = {
-        @Index(name = "idx_hotel_city", columnList = "city")
+        @Index(name = "idx_hotel_city", columnList = "city"),
+        @Index(name = "idx_hotel_manager", columnList = "manager_id")
 })
 @Getter
 @Setter
@@ -54,15 +58,40 @@ public class Hotel {
     @Column(length = 500)
     private String amenities;
 
+    /**
+     * Hotel manager who owns this property (ABAC attribute).
+     * Null when created by an admin without assignment.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "manager_id")
+    @JsonIgnore
+    private User manager;
+
+    /** SaaS subscription plan — ABAC attribute gating inventory writes and refunds. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "saas_plan", nullable = false)
+    private SaasPlan saasPlan = SaasPlan.FREE;
+
     public Hotel(String name, String city, Double pricePerNight) {
         this.name = name;
         this.city = city;
         this.pricePerNight = pricePerNight;
+        this.saasPlan = SaasPlan.FREE;
     }
 
     public Hotel(String name, String city, Double pricePerNight, String description, String amenities) {
         this(name, city, pricePerNight);
         this.description = description;
         this.amenities = amenities;
+    }
+
+    @JsonProperty("managerId")
+    public Long getManagerId() {
+        return manager != null ? manager.getId() : null;
+    }
+
+    @JsonProperty("managerUsername")
+    public String getManagerUsername() {
+        return manager != null ? manager.getUsername() : null;
     }
 }

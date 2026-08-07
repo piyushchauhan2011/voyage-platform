@@ -21,6 +21,15 @@ public final class BookingSpec {
         return (root, query, builder) -> hotelId == null ? null : builder.equal(root.get("hotel").get("id"), hotelId);
     }
 
+    public static Specification<Booking> forHotels(java.util.Collection<Long> hotelIds) {
+        return (root, query, builder) -> {
+            if (hotelIds == null || hotelIds.isEmpty()) {
+                return null;
+            }
+            return root.get("hotel").get("id").in(hotelIds);
+        };
+    }
+
     public static Specification<Booking> checkInAfter(LocalDate date) {
         return (root, query, builder) -> date == null ? null : builder.greaterThanOrEqualTo(root.get("checkIn"), date);
     }

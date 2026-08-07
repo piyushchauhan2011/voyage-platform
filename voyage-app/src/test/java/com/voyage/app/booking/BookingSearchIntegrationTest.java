@@ -48,8 +48,8 @@ class BookingSearchIntegrationTest {
         userRepository.deleteAll();
         hotelRepository.deleteAll();
 
-        alice = userRepository.save(new User("alice-bookings", "alice-bookings@test.com", "encoded", Role.USER));
-        bob = userRepository.save(new User("bob-bookings", "bob-bookings@test.com", "encoded", Role.USER));
+        alice = userRepository.save(new User("alice-bookings", "alice-bookings@test.com", "encoded", Role.CUSTOMER));
+        bob = userRepository.save(new User("bob-bookings", "bob-bookings@test.com", "encoded", Role.CUSTOMER));
         tokyo = hotelRepository.save(new Hotel("Tokyo Grand", "Tokyo", 220.0));
         paris = hotelRepository.save(new Hotel("Paris Central", "Paris", 180.0));
 

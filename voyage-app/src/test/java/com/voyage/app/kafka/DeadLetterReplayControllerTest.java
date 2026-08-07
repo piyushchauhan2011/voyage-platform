@@ -111,7 +111,7 @@ class DeadLetterReplayControllerTest {
         deadLetterEvent = deadLetterHotelEventRepository.save(deadLetterEvent);
 
         mockMvc.perform(post("/api/kafka/dead-letters/{id}/retry", deadLetterEvent.getId())
-                        .header("Authorization", bearerTokenFor(Role.USER, "kafka-replay-user"))
+                        .header("Authorization", bearerTokenFor(Role.CUSTOMER, "kafka-replay-user"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isForbidden());

@@ -7,6 +7,8 @@ import com.voyage.app.inventory.RoomInventoryRepository;
 import com.voyage.app.inventory.RoomType;
 import com.voyage.app.notification.NotificationRepository;
 import com.voyage.app.notification.NotificationType;
+import com.voyage.app.payment.PaymentRepository;
+import com.voyage.app.token.RefreshTokenRepository;
 import com.voyage.app.user.Role;
 import com.voyage.app.user.User;
 import com.voyage.app.user.UserRepository;
@@ -30,6 +32,9 @@ class BookingCancellationFlowTest {
     @Autowired InventoryService inventoryService;
     @Autowired RoomInventoryRepository roomInventoryRepository;
     @Autowired NotificationRepository notificationRepository;
+    @Autowired BookingRepository bookingRepository;
+    @Autowired PaymentRepository paymentRepository;
+    @Autowired RefreshTokenRepository refreshTokenRepository;
 
     private Hotel hotel;
     private User user;
@@ -39,7 +44,10 @@ class BookingCancellationFlowTest {
     @BeforeEach
     void setUp() {
         notificationRepository.deleteAll();
+        paymentRepository.deleteAll();
+        bookingRepository.deleteAll();
         roomInventoryRepository.deleteAll();
+        refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
         hotelRepository.deleteAll();
 

@@ -2,6 +2,7 @@ package com.voyage.app.redis;
 
 import com.voyage.app.VoyageAppApplication;
 import com.voyage.app.security.JwtService;
+import com.voyage.app.token.RefreshTokenRepository;
 import com.voyage.app.user.Role;
 import com.voyage.app.user.User;
 import com.voyage.app.user.UserRepository;
@@ -30,6 +31,7 @@ class RedisPlaygroundIntegrationTest extends RedisIntegrationTestSupport {
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
     @Autowired UserRepository userRepository;
+    @Autowired RefreshTokenRepository refreshTokenRepository;
     @Autowired PasswordEncoder passwordEncoder;
     @Autowired JwtService jwtService;
 
@@ -37,6 +39,7 @@ class RedisPlaygroundIntegrationTest extends RedisIntegrationTestSupport {
 
     @BeforeEach
     void setUpAdminToken() {
+        refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
         User user = new User("redis-admin", "redis-admin@test.com", passwordEncoder.encode("password123"), Role.ADMIN);
         adminToken = "Bearer " + jwtService.generateToken(userRepository.save(user));

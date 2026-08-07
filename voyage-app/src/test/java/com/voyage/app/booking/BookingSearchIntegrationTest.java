@@ -3,6 +3,9 @@ package com.voyage.app.booking;
 import com.voyage.app.hotel.Hotel;
 import com.voyage.app.hotel.HotelRepository;
 import com.voyage.app.inventory.RoomType;
+import com.voyage.app.notification.NotificationRepository;
+import com.voyage.app.payment.PaymentRepository;
+import com.voyage.app.token.RefreshTokenRepository;
 import com.voyage.app.user.Role;
 import com.voyage.app.user.User;
 import com.voyage.app.user.UserRepository;
@@ -27,6 +30,9 @@ class BookingSearchIntegrationTest {
     @Autowired BookingRepository bookingRepository;
     @Autowired HotelRepository hotelRepository;
     @Autowired UserRepository userRepository;
+    @Autowired NotificationRepository notificationRepository;
+    @Autowired PaymentRepository paymentRepository;
+    @Autowired RefreshTokenRepository refreshTokenRepository;
 
     private User alice;
     private User bob;
@@ -35,7 +41,10 @@ class BookingSearchIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        notificationRepository.deleteAll();
+        paymentRepository.deleteAll();
         bookingRepository.deleteAll();
+        refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
         hotelRepository.deleteAll();
 

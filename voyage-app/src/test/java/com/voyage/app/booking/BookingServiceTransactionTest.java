@@ -5,7 +5,9 @@ import com.voyage.app.hotel.HotelRepository;
 import com.voyage.app.inventory.InventoryService;
 import com.voyage.app.inventory.RoomInventoryRepository;
 import com.voyage.app.inventory.RoomType;
+import com.voyage.app.notification.NotificationRepository;
 import com.voyage.app.payment.PaymentRepository;
+import com.voyage.app.token.RefreshTokenRepository;
 import com.voyage.app.user.Role;
 import com.voyage.app.user.User;
 import com.voyage.app.user.UserRepository;
@@ -31,6 +33,8 @@ class BookingServiceTransactionTest {
     @Autowired InventoryService inventoryService;
     @Autowired BookingRepository bookingRepository;
     @Autowired PaymentRepository paymentRepository;
+    @Autowired NotificationRepository notificationRepository;
+    @Autowired RefreshTokenRepository refreshTokenRepository;
 
     private Hotel hotel;
     private User user;
@@ -39,9 +43,11 @@ class BookingServiceTransactionTest {
 
     @BeforeEach
     void setUp() {
+        notificationRepository.deleteAll();
         paymentRepository.deleteAll();
         bookingRepository.deleteAll();
         roomInventoryRepository.deleteAll();
+        refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
         hotelRepository.deleteAll();
 

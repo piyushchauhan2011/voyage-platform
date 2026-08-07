@@ -41,9 +41,28 @@ public class Hotel {
     @Column(name = "price_per_night", nullable = false)
     private Double pricePerNight;
 
+    /**
+     * Phase 8 — free text describing location, vibe, and nearby landmarks.
+     * This is what gets embedded into pgvector, so a query like "near the beach"
+     * can match a hotel that never uses the word "beach" in its name or city.
+     * Nullable so hotels created before Phase 8 (and the existing API) stay valid.
+     */
+    @Column(length = 2000)
+    private String description;
+
+    /** Comma-separated list — kept simple on purpose; it is embedded alongside the description. */
+    @Column(length = 500)
+    private String amenities;
+
     public Hotel(String name, String city, Double pricePerNight) {
         this.name = name;
         this.city = city;
         this.pricePerNight = pricePerNight;
+    }
+
+    public Hotel(String name, String city, Double pricePerNight, String description, String amenities) {
+        this(name, city, pricePerNight);
+        this.description = description;
+        this.amenities = amenities;
     }
 }

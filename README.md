@@ -6,7 +6,7 @@ A Maven monorepo for learning backend Java and Spring Boot — structured around
 
 | Module | Stack | Purpose |
 |---|---|---|
-| [`voyage-app`](voyage-app/) | Spring Boot 4.1 · PostgreSQL · JPA · Kafka · RabbitMQ · Thymeleaf | Spring fundamentals: IoC, DI, REST, JPA, bean lifecycle, async messaging |
+| [`voyage-app`](voyage-app/) | Spring Boot 4.1 · PostgreSQL · JPA · Kafka · RabbitMQ · Thymeleaf · Spring AI | Spring fundamentals: IoC, DI, REST, JPA, bean lifecycle, async messaging, AI |
 | [`java-mastery`](java-mastery/) | Plain Java 21 | Core Java: OOP, Collections internals, Streams & lambdas |
 
 ---
@@ -21,7 +21,7 @@ docker compose up -d
 
 | Service | URL / Port | Credentials |
 |---|---|---|
-| PostgreSQL | `localhost:5432` | `voyage / voyage` |
+| PostgreSQL (pgvector) | `localhost:5432` | `voyage / voyage` |
 | pgAdmin | http://localhost:5050 | `admin@voyage.com / admin` |
 | Redis | `localhost:6379` | — |
 | Kafka | `localhost:9092` | — |
@@ -54,6 +54,9 @@ curl http://localhost:8080/actuator/health
 
 # Kafka dashboard
 open http://localhost:8080/ui/kafka
+
+# Spring AI hotel assistant (needs GEMINI_API_KEY — see Phase 8)
+open http://localhost:8080/ui/ai
 ```
 
 ### 3. Run the Java mastery demos
@@ -557,6 +560,65 @@ kind delete cluster             # delete the kind cluster itself
 
 ---
 
+### Phase 8 — Spring AI hotel assistant
+
+A hotel assistant that answers **"Find hotels near beach under $100"**, built one concept at a time: chat, embeddings, vector search, RAG, tool calling, agents. Uses Spring AI 2.0 with Google Gemini and pgvector.
+
+The question is two questions in one coat, and the split is the lesson:
+
+```text
+"Find hotels near beach under $100"
+        |
+        +-- "near beach"  --> fuzzy    --> embedding similarity over descriptions (pgvector)
+        |
+        +-- "under $100"  --> exact    --> tool call running SQL against the hotels table
+        |
+        v
+   answer + trace: retrieved docs, tool calls, tokens
+```
+
+Similarity search cannot compare numbers; a `WHERE` clause cannot tell that "sand and surf" means beach. The agent decides which to use and combines them.
+
+#### Setup
+
+Get a free key from [Google AI Studio](https://aistudio.google.com/apikey), add it to `.env` as `GEMINI_API_KEY=...`, then:
+
+```bash
+set -a && . ./.env && set +a     # Spring Boot does not read .env by itself
+docker compose up -d
+./mvnw spring-boot:run -pl voyage-app
+open http://localhost:8080/ui/ai
+```
+
+**Docker Compose reads `.env` automatically; Spring Boot does not.** `./mvnw spring-boot:run` only sees what is exported in your shell, so putting the key in `.env` is not sufficient on its own. Every other variable in `application.yml` has a default matching `.env`, which is why this only surfaces with `GEMINI_API_KEY`. Check with `/api/ai/playground/status` — it reports `apiKeyConfigured`.
+
+The app still boots without a key — the other phases keep working and the AI endpoints return a clear 503 explaining what is missing.
+
+> Postgres now runs `pgvector/pgvector:pg16` instead of `postgres:16-alpine`, since the vector store needs the `vector` extension. Same PG16 base, so the existing `postgres-data` volume carries over.
+
+#### The ladder
+
+Each rung is a panel at `/ui/ai` and an endpoint under `/api/ai/playground` (ADMIN JWT).
+
+| # | Rung | Endpoint | What to notice |
+|---|---|---|---|
+| 0 | Seed catalog | `POST /seed-catalog` | ~20 hotels whose descriptions never say "beach" literally |
+| 1 | Chat | `POST /chat` | Ask for a Voyage hotel — it invents one. The baseline failure |
+| 2 | Embedding | `POST /embed` | Related phrases score high with no words in common |
+| 3 | Ingest | `POST /ingest` | Hotels become text + 768-float vectors + metadata |
+| 4 | Search | `POST /search` | Retrieval with scores, before any prose hides the mechanics |
+| 5 | RAG | `POST /rag` | Retrieved rows go into the prompt, so answers cite real hotels |
+| 6 | Tools | `GET /tools` | The JSON contract the model programs against |
+| 7 | Assistant | `POST /assistant` | RAG + tools + chat memory, with a full trace |
+
+Two moments are worth waiting for. At rung 4, searching "somewhere near the sand and surf" returns hotels a SQL `LIKE` would miss entirely. At rung 5, asking for hotels "under $100" without a filter often returns a $320 resort — which is exactly why rung 6 exists.
+
+Helper script: `bash api_manual_checks/seed_ai_lab.sh` — walks the whole ladder from the terminal and prints the trace at each rung.
+
+Full walkthrough, curl examples, and Gemini-specific gotchas: [`ai-lab/README.md`](ai-lab/README.md).
+
+---
+
 ## Roadmap coverage
 
 This repo is structured to grow with the learning plan:
@@ -567,3 +629,4 @@ This repo is structured to grow with the learning plan:
 - **Phase 5 (complete)** — Kafka producer/consumer + Thymeleaf event dashboard for hotel mutations
 - **Phase 6 (in progress)** — Redis-backed hotel caching + Redis playground for Strings, Hashes, Lists, Sets, Sorted Sets, TTL, Pub/Sub, and locks
 - **Phase 7 (complete)** — `voyage-app/Dockerfile` (multi-stage) + full Kubernetes deployment in `k8s/`
+- **Phase 8 (complete)** — Spring AI hotel assistant: Gemini chat, embeddings, pgvector, RAG, tool calling, and an agent at `/ui/ai`

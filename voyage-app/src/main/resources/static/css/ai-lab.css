@@ -1,0 +1,109 @@
+.ai-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ai-grid .answer-panel,
+.ai-grid .output-panel {
+    grid-column: 1 / -1;
+}
+
+.button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+button.secondary,
+a.button-link.secondary {
+    background: transparent;
+    color: var(--accent-deep);
+    border: 1px solid var(--line);
+}
+
+/* Numbered badge marking each rung of the concept ladder */
+.rung {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-right: 0.45rem;
+    border-radius: 50%;
+    background: var(--accent, #2f5d50);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.answer-text {
+    padding: 16px;
+    border-radius: 12px;
+    background: #f7f2ea;
+    border: 1px solid var(--line);
+    white-space: pre-wrap;
+    line-height: 1.55;
+    min-height: 90px;
+}
+
+.answer-trace {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 14px;
+}
+
+.trace-block {
+    flex: 1 1 260px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: #fff;
+}
+
+.trace-block h3 {
+    margin: 0 0 8px;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent-deep, #2f5d50);
+}
+
+.trace-block ul {
+    margin: 0;
+    padding-left: 1.1rem;
+}
+
+.trace-block li {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+.plan-output {
+    margin: 0;
+    padding: 16px;
+    min-height: 220px;
+    max-height: 520px;
+    overflow: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    background: #1d1a17;
+    color: #f4ede4;
+    border-radius: 12px;
+}
+
+@media (max-width: 1100px) {
+    .ai-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .ai-grid {
+        grid-template-columns: 1fr;
+    }
+}

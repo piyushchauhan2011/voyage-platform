@@ -1,7 +1,9 @@
 services:
 
   postgres:
-    image: postgres:16-alpine
+    # pgvector image (same PG16 base as postgres:16-alpine, so the existing volume still works)
+    # ships the `vector` extension needed by the Phase 8 Spring AI lab
+    image: pgvector/pgvector:pg16
     container_name: voyage-postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB}

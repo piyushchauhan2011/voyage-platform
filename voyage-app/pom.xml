@@ -93,6 +93,25 @@
 			<version>2.0.12</version>
 		</dependency>
 
+		<!-- Phase 8 — Spring AI: Gemini chat + embeddings, pgvector store. Versions come from spring-ai-bom. -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-starter-model-google-genai</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-starter-model-google-genai-embedding</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-starter-vector-store-pgvector</artifactId>
+		</dependency>
+		<!-- QuestionAnswerAdvisor (the RAG advisor) ships separately from the chat client -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-vector-store-advisor</artifactId>
+		</dependency>
+
 		<!-- H2 for in-memory database during tests -->
 		<dependency>
 			<groupId>com.h2database</groupId>
@@ -128,6 +147,13 @@
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>testcontainers</artifactId>
+			<version>1.21.3</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- PostgreSQLContainer, used by the pgvector integration test -->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>postgresql</artifactId>
 			<version>1.21.3</version>
 			<scope>test</scope>
 		</dependency>

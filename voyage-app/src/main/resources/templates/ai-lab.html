@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voyage Spring AI Lab</title>
+    <link rel="stylesheet" th:href="@{/css/booking-workbench.css}">
+    <link rel="stylesheet" th:href="@{/css/ai-lab.css}">
+</head>
+<body>
+<div class="workbench-shell">
+    <header class="hero-band">
+        <div>
+            <p class="eyebrow">Spring AI lab</p>
+            <h1>Chat, embeddings, vector search, RAG, tools, agent</h1>
+            <p class="hero-copy">
+                Build up a hotel assistant one concept at a time, using Gemini through Spring AI
+                and pgvector for storage. The target question is
+                <em>"Find hotels near beach under $100"</em> — half of it is fuzzy, half of it is
+                arithmetic, and each half needs a different mechanism. Compare with
+                <a class="inline-link" th:href="@{/ui/rabbitmq}">/ui/rabbitmq</a>.
+            </p>
+        </div>
+        <div class="hero-card">
+            <h2>Suggested path</h2>
+            <ul>
+                <li>Login as ADMIN, then check <strong>Status</strong> for your Gemini key.</li>
+                <li><strong>Seed catalog</strong> to create hotels with descriptions.</li>
+                <li>Try <strong>Chat</strong> — note it invents hotels.</li>
+                <li><strong>Embed</strong> two phrases and compare the scores.</li>
+                <li><strong>Ingest</strong>, then <strong>Search</strong> for "near the sand".</li>
+                <li><strong>RAG</strong>, then finally <strong>Ask assistant</strong>.</li>
+            </ul>
+        </div>
+    </header>
+
+    <main class="workbench-grid ai-grid">
+        <section class="panel auth-panel">
+            <div class="panel-heading">
+                <h2>Auth helper</h2>
+                <p>Admin JWT required for <strong>/api/ai/playground</strong>.</p>
+            </div>
+            <form id="login-form" class="stack-form">
+                <label>Username<input type="text" name="username" autocomplete="username" placeholder="admin"></label>
+                <label>Password<input type="password" name="password" autocomplete="current-password" placeholder="password123"></label>
+                <button type="submit">Login</button>
+            </form>
+            <label class="token-block">
+                Active access token
+                <textarea id="token-input" rows="4" placeholder="Paste a Bearer token here."></textarea>
+            </label>
+            <div id="auth-feedback" class="feedback" aria-live="polite"></div>
+            <div class="button-row">
+                <button type="button" id="status-btn" class="secondary">Check status</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <h2><span class="rung">0</span> Hotel catalog</h2>
+                <p>Nothing to embed until hotels have descriptions. Safe to run twice.</p>
+            </div>
+            <div class="button-row">
+                <button type="button" id="seed-btn">Seed catalog</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <h2><span class="rung">1</span> Chat</h2>
+                <p>A bare <code>ChatClient</code> call. No retrieval, no tools.</p>
+            </div>
+            <form id="chat-form" class="stack-form">
+                <label>Question
+                    <input type="text" name="message" placeholder="Which Voyage hotel is nearest the beach?">
+                </label>
+                <button type="submit">Send chat</button>
+            </form>
+            <div class="button-row">
+                <button type="button" id="prompt-template-btn" class="secondary">Prompt template demo</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <h2><span class="rung">2</span> Embedding</h2>
+                <p>Two texts become vectors; cosine similarity scores their meaning.</p>
+            </div>
+            <form id="embed-form" class="stack-form">
+                <label>First text
+                    <input type="text" name="first" placeholder="a quiet room a short walk from the sand">
+                </label>
+                <label>Second text
+                    <input type="text" name="second" placeholder="beachfront hotel near the sea">
+                </label>
+                <button type="submit">Embed and compare</button>
+            </form>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <h2><span class="rung">3</span> Vector store</h2>
+                <p>Embed every hotel description into the pgvector table.</p>
+            </div>
+            <div class="button-row">
+                <button type="button" id="ingest-btn">Ingest hotels</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <h2><span class="rung">4</span> Similarity search</h2>
+                <p>Pure retrieval — see what matched and how well, before any model writes prose.</p>
+            </div>
+            <form id="search-form" class="stack-form">
+                <label>Query
+                    <input type="text" name="query" placeholder="somewhere near the sand and surf">
+                </label>
+                <label>Metadata filter (optional)
+                    <input type="text" name="filterExpression" placeholder="pricePerNight &lt; 100">
+                </label>
+                <button type="submit">Search vectors</button>
+            </form>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <h2><span class="rung">5</span> RAG</h2>
+                <p>Retrieve, paste into the prompt, then generate. Sources shown with the answer.</p>
+            </div>
+            <form id="rag-form" class="stack-form">
+                <label>Question
+                    <input type="text" name="question" placeholder="Find hotels near the beach under $100">
+                </label>
+                <label>Metadata filter (optional)
+                    <input type="text" name="filterExpression" placeholder="pricePerNight &lt; 100">
+                </label>
+                <button type="submit">Ask with RAG</button>
+            </form>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <h2><span class="rung">6</span> Tool calling</h2>
+                <p>The Java methods Gemini may invoke against the live database.</p>
+            </div>
+            <div class="button-row">
+                <button type="button" id="tools-btn" class="secondary">Show tool catalog</button>
+            </div>
+        </section>
+
+        <section class="panel assistant-panel">
+            <div class="panel-heading">
+                <h2><span class="rung">7</span> Hotel assistant</h2>
+                <p>RAG for "near beach", tool calls for "under $100", memory for follow-ups.</p>
+            </div>
+            <form id="assistant-form" class="stack-form">
+                <label>Question
+                    <input type="text" name="question" value="Find hotels near beach under $100">
+                </label>
+                <label>Conversation id
+                    <input type="text" name="conversationId" value="voyage-ai-lab">
+                </label>
+                <button type="submit">Ask assistant</button>
+            </form>
+            <div class="button-row">
+                <button type="button" id="clear-conversation-btn" class="secondary">Clear conversation</button>
+            </div>
+        </section>
+
+        <section class="panel answer-panel">
+            <div class="panel-heading">
+                <h2>Assistant answer</h2>
+                <p id="answer-meta" class="hero-copy">The latest natural-language answer appears here.</p>
+            </div>
+            <div id="answer-text" class="answer-text">Ask the assistant to see its answer.</div>
+            <div id="answer-trace" class="answer-trace"></div>
+        </section>
+
+        <section class="panel output-panel">
+            <div class="panel-heading">
+                <h2>Raw output</h2>
+                <p id="output-meta" class="hero-copy">Full JSON for every call, including observations.</p>
+            </div>
+            <pre id="output-panel" class="plan-output" aria-live="polite">Ready.</pre>
+        </section>
+    </main>
+</div>
+
+<script th:inline="javascript">
+    window.aiLabConfig = {
+        storageKey: 'voyage.ai.lab.token',
+        loginUrl: /*[[@{/api/v1/auth/login}]]*/ '/api/v1/auth/login',
+        baseUrl: /*[[@{/api/ai/playground}]]*/ '/api/ai/playground'
+    };
+</script>
+<script th:src="@{/js/ai-lab.js}"></script>
+</body>
+</html>

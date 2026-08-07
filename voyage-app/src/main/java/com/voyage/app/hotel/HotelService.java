@@ -74,6 +74,8 @@ public class HotelService {
         hotel.setName(updates.getName());
         hotel.setCity(updates.getCity());
         hotel.setPricePerNight(updates.getPricePerNight());
+        hotel.setDescription(updates.getDescription());
+        hotel.setAmenities(updates.getAmenities());
         Hotel updatedHotel = hotelRepository.save(hotel);
         publishEvent(HotelEventType.UPDATED, updatedHotel);
         return updatedHotel;

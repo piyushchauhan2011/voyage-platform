@@ -10,6 +10,7 @@ There is now a separate Kafka hardening script focused on retries, dead-letter h
 There is now a separate Redis verification script focused on cache population, TTL checks, playground structures, pub/sub, and locks.
 There is now a Postgres lab seed script (`seed_postgres_lab.sh`) that seeds volume data and runs an `EXPLAIN` via `/api/postgres/playground` (see also `postgres-lab/` SQL scripts and `/ui/postgres`).
 There is now a RabbitMQ lab seed script (`seed_rabbitmq_lab.sh`) that sets up topology, publishes a job, and waits for a consumer delivery via `/api/rabbitmq/playground` (see also `rabbitmq-lab/` and `/ui/rabbitmq`).
+There is now a Spring AI lab seed script (`seed_ai_lab.sh`) that seeds the hotel catalog, embeds it into pgvector, and walks similarity search, RAG, and the tool-calling agent via `/api/ai/playground` (see also `ai-lab/` and `/ui/ai`). It needs a `GEMINI_API_KEY` exported into the shell that runs the app.
 
 ## Prerequisites
 

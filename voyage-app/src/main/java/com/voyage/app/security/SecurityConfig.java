@@ -68,6 +68,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/postgres/**").hasRole("ADMIN")
                 .requestMatchers("/api/rabbitmq/**").hasRole("ADMIN")
                 .requestMatchers("/api/jpa/**").hasRole("ADMIN")
+                .requestMatchers("/api/ai/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated()
                 .requestMatchers(HttpMethod.PATCH, "/api/v1/users/me").authenticated()
                 .requestMatchers("/api/v1/users/**").hasRole("ADMIN")

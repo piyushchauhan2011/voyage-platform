@@ -49,6 +49,38 @@ spring:
     username: ${RABBITMQ_USER:guest}
     password: ${RABBITMQ_PASSWORD:guest}
 
+  # Phase 8 — Spring AI. Chat and embeddings are separate modules, so the key is set twice.
+  # The "not-configured" fallback keeps the app bootable without a key (Spring AI asserts
+  # a non-blank api-key at startup); the AI lab then reports the missing key per request
+  # instead of taking the other phases down with it.
+  ai:
+    google:
+      genai:
+        # Gemini Developer API mode — an AI Studio key, no GCP project required
+        api-key: ${GEMINI_API_KEY:not-configured}
+        chat:
+          model: gemini-2.5-flash
+          temperature: 0.2
+        embedding:
+          api-key: ${GEMINI_API_KEY:not-configured}
+          text:
+            # text-embedding-004 has been retired and now 404s on embedContent
+            model: gemini-embedding-001
+            # This model defaults to 3072 dimensions, which pgvector's HNSW index cannot
+            # handle (it caps at 2000). Asking for 768 keeps the index valid and must stay
+            # in step with spring.ai.vectorstore.pgvector.dimensions below.
+            dimensions: 768
+            # RETRIEVAL_DOCUMENT tunes embeddings for the indexing side of search
+            task-type: RETRIEVAL_DOCUMENT
+    vectorstore:
+      pgvector:
+        # runs CREATE EXTENSION vector + creates the vector_store table on startup
+        initialize-schema: true
+        # must match the embedding dimensions requested above, or inserts fail
+        dimensions: 768
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+
 application:
   booking:
     retry:
@@ -76,6 +108,11 @@ application:
       ttl:
         hotel-by-id: PT10M
         hotels-by-city: PT5M
+  ai:
+    enabled: true
+    # how many hotel documents the retriever pulls back for RAG
+    top-k: 4
+    similarity-threshold: 0.5
   security:
     jwt:
       # dev-only key — replace with a securely generated secret in production

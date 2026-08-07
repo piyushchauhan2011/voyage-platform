@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voyage Booking Workbench</title>
+    <link rel="stylesheet" th:href="@{/css/booking-workbench.css}">
+</head>
+<body>
+<div class="workbench-shell">
+    <header class="hero-band">
+        <div>
+            <p class="eyebrow">Phase 7</p>
+            <h1>Inventory, bookings, cancellations, and notifications in one place</h1>
+            <p class="hero-copy">
+                Use the same JWT-secured APIs your tests exercise, but from a single UI that can seed inventory,
+                create bookings, cancel them, and watch notifications and stock levels update.
+            </p>
+        </div>
+        <div class="hero-card">
+            <h2>What this page proves</h2>
+            <ul>
+                <li>Create inventory as an admin.</li>
+                <li>Create bookings as a user.</li>
+                <li>Cancel bookings and return rooms to inventory.</li>
+                <li>Observe after-commit notifications for both confirmation and cancellation.</li>
+            </ul>
+        </div>
+    </header>
+
+    <main class="workbench-grid">
+        <section class="panel auth-panel">
+            <div class="panel-heading">
+                <h2>Auth helper</h2>
+                <p>Login with any existing user, then reuse the bearer token for all booking and notification calls.</p>
+            </div>
+            <form id="login-form" class="stack-form">
+                <label>Username<input type="text" name="username" autocomplete="username" placeholder="booking-controller-user"></label>
+                <label>Password<input type="password" name="password" autocomplete="current-password" placeholder="password123"></label>
+                <button type="submit">Login</button>
+            </form>
+            <label class="token-block">
+                Active access token
+                <textarea id="token-input" rows="6" placeholder="Paste a Bearer token here."></textarea>
+            </label>
+            <div id="auth-feedback" class="feedback" aria-live="polite"></div>
+        </section>
+
+        <section class="panel inventory-panel">
+            <div class="panel-heading">
+                <h2>Inventory console</h2>
+                <p>Admin-only writes against <strong>/api/v1/inventory</strong>.</p>
+            </div>
+            <form id="inventory-form" class="stack-form compact-grid">
+                <label>Hotel
+                    <select name="hotelId" required>
+                        <option value="">Select hotel</option>
+                        <option th:each="hotel : ${hotels}" th:value="${hotel.id}" th:text="|#${hotel.id} ${hotel.name} (${hotel.city})|"></option>
+                    </select>
+                </label>
+                <label>Room type
+                    <select name="roomType" required>
+                        <option value="">Select type</option>
+                        <option th:each="roomType : ${roomTypes}" th:value="${roomType}" th:text="${roomType}"></option>
+                    </select>
+                </label>
+                <label>Date<input type="date" name="date" required></label>
+                <label>Available rooms<input type="number" name="availableRooms" min="0" required></label>
+                <button type="submit">Create inventory row</button>
+            </form>
+
+            <form id="inventory-query-form" class="stack-form compact-grid secondary-form">
+                <label>Hotel
+                    <select name="hotelId" required>
+                        <option value="">Select hotel</option>
+                        <option th:each="hotel : ${hotels}" th:value="${hotel.id}" th:text="|#${hotel.id} ${hotel.name}|"></option>
+                    </select>
+                </label>
+                <label>From<input type="date" name="from" required></label>
+                <label>To<input type="date" name="to" required></label>
+                <label>Room type
+                    <select name="roomType">
+                        <option value="">All types</option>
+                        <option th:each="roomType : ${roomTypes}" th:value="${roomType}" th:text="${roomType}"></option>
+                    </select>
+                </label>
+                <button type="submit">Load inventory</button>
+            </form>
+
+            <div id="inventory-feedback" class="feedback" aria-live="polite"></div>
+            <div id="inventory-results" class="result-list"></div>
+        </section>
+
+        <section class="panel booking-panel">
+            <div class="panel-heading">
+                <h2>Booking flow</h2>
+                <p>User-facing create and cancel actions against <strong>/api/v1/bookings</strong>.</p>
+            </div>
+            <form id="booking-form" class="stack-form compact-grid">
+                <label>Hotel
+                    <select name="hotelId" required>
+                        <option value="">Select hotel</option>
+                        <option th:each="hotel : ${hotels}" th:value="${hotel.id}" th:text="|#${hotel.id} ${hotel.name} (${hotel.city})|"></option>
+                    </select>
+                </label>
+                <label>Room type
+                    <select name="roomType" required>
+                        <option value="">Select type</option>
+                        <option th:each="roomType : ${roomTypes}" th:value="${roomType}" th:text="${roomType}"></option>
+                    </select>
+                </label>
+                <label>Check-in<input type="date" name="checkIn" required></label>
+                <label>Check-out<input type="date" name="checkOut" required></label>
+                <label>Payment token<input type="text" name="paymentToken" value="approve" required></label>
+                <button type="submit">Create booking</button>
+            </form>
+            <div class="button-row">
+                <button id="refresh-bookings" type="button">Refresh my bookings</button>
+                <button id="refresh-notifications" type="button">Refresh notifications</button>
+            </div>
+            <div id="booking-feedback" class="feedback" aria-live="polite"></div>
+            <div id="booking-results" class="result-list booking-results"></div>
+        </section>
+
+        <section class="panel notification-panel">
+            <div class="panel-heading">
+                <h2>Notifications</h2>
+                <p>After-commit messages for confirmation and cancellation.</p>
+            </div>
+            <div id="notification-results" class="result-list"></div>
+        </section>
+    </main>
+</div>
+
+<script th:inline="javascript">
+    window.bookingWorkbenchConfig = {
+        loginUrl: [[@{/api/v1/auth/login}]],
+        inventoryUrl: [[@{/api/v1/inventory}]],
+        bookingsUrl: [[@{/api/v1/bookings}]],
+        notificationsUrl: [[@{/api/v1/notifications/me}]],
+        markReadBaseUrl: [[@{/api/v1/notifications/}]],
+        storageKey: 'voyage.booking.accessToken'
+    };
+</script>
+<script th:src="@{/js/booking-workbench.js}"></script>
+</body>
+</html>

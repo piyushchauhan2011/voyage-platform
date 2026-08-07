@@ -1,5 +1,7 @@
 package com.voyage.app.auth;
 
+import com.voyage.app.exception.ConflictException;
+import com.voyage.app.exception.UnauthorizedException;
 import com.voyage.app.security.JwtService;
 import com.voyage.app.token.RefreshToken;
 import com.voyage.app.token.RefreshTokenService;
@@ -7,14 +9,12 @@ import com.voyage.app.user.Role;
 import com.voyage.app.user.User;
 import com.voyage.app.user.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class AuthService {
@@ -42,10 +42,10 @@ public class AuthService {
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.username())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already taken");
+            throw new ConflictException("Username already taken");
         }
         if (userRepository.existsByEmail(request.email())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
+            throw new ConflictException("Email already registered");
         }
         // BCrypt hashes the password — the plaintext is never stored
         User user = new User(request.username(), request.email(),
@@ -62,16 +62,17 @@ public class AuthService {
                     new UsernamePasswordAuthenticationToken(request.username(), request.password())
             );
         } catch (BadCredentialsException e) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
+            throw new UnauthorizedException("Invalid username or password");
         }
-        User user = userRepository.findByUsername(request.username()).orElseThrow();
+        User user = userRepository.findByUsername(request.username())
+                .orElseThrow(() -> new UnauthorizedException("Authenticated user not found"));
         return buildAuthResponse(user);
     }
 
     @Transactional
     public AuthResponse refresh(RefreshRequest request) {
         RefreshToken refreshToken = refreshTokenService.findByToken(request.refreshToken())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token not found"));
+            .orElseThrow(() -> new UnauthorizedException("Refresh token not found"));
         refreshTokenService.verifyExpiration(refreshToken);
         // Issue a new access token; the refresh token remains valid until its own expiry
         String accessToken = jwtService.generateToken(refreshToken.getUser());

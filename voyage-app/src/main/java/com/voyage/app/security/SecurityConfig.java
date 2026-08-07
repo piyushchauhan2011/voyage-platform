@@ -60,17 +60,25 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Allow Spring Boot's error dispatcher so a real error page/message reaches the client
                 .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers(HttpMethod.GET, "/ui/**", "/css/**", "/js/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/kafka/**").hasRole("ADMIN")
                 .requestMatchers("/api/redis/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated()
+                .requestMatchers(HttpMethod.PATCH, "/api/v1/users/me").authenticated()
+                .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/v1/inventory/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/inventory/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/inventory/**").hasRole("ADMIN")
+                .requestMatchers("/api/v1/bookings/**").authenticated()
+                .requestMatchers("/api/v1/notifications/**").authenticated()
                 // Hotel reads are public — no account required to browse
-                .requestMatchers(HttpMethod.GET, "/api/hotels/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/hotels/**").permitAll()
                 // Hotel writes are restricted to admins
-                .requestMatchers(HttpMethod.POST, "/api/hotels/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/hotels/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/hotels/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/hotels/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/v1/hotels/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/hotels/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex

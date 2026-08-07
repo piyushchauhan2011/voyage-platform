@@ -1,11 +1,13 @@
 package com.voyage.app.security;
 
+import com.voyage.app.exception.ApiError;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 
@@ -19,14 +21,20 @@ import java.io.IOException;
 @Component
 public class AuthEntryPointJwt implements AuthenticationEntryPoint {
 
+    private final ObjectMapper objectMapper;
+
+    public AuthEntryPointJwt(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
+
     @Override
     public void commence(HttpServletRequest request,
                          HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.getWriter().write("""
-                {"status":401,"error":"Unauthorized","message":"%s","path":"%s"}
-                """.formatted(authException.getMessage(), request.getServletPath()));
+        response.getWriter().write(objectMapper.writeValueAsString(
+                ApiError.of(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized", authException.getMessage(), request.getServletPath())
+        ));
     }
 }

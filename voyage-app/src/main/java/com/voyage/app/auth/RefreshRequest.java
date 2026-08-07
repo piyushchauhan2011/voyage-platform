@@ -1,3 +1,5 @@
 package com.voyage.app.auth;
 
-public record RefreshRequest(String refreshToken) {}
+import jakarta.validation.constraints.NotBlank;
+
+public record RefreshRequest(@NotBlank String refreshToken) {}

@@ -38,15 +38,15 @@ Try the API:
 
 ```bash
 # List all hotels
-curl http://localhost:8080/api/hotels
+curl http://localhost:8080/api/v1/hotels
 
 # Create a hotel
-curl -X POST http://localhost:8080/api/hotels \
+curl -X POST http://localhost:8080/api/v1/hotels \
   -H "Content-Type: application/json" \
   -d '{"name":"Grand Hyatt","city":"Tokyo","pricePerNight":220}'
 
 # Filter by city
-curl "http://localhost:8080/api/hotels/search?city=Tokyo"
+curl "http://localhost:8080/api/v1/hotels?city=Tokyo"
 
 # Spring Actuator health
 curl http://localhost:8080/actuator/health

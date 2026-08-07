@@ -1,5 +1,9 @@
 package com.voyage.app.hotel;
 
+import com.voyage.app.common.PageResponse;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,7 +20,7 @@ import java.util.List;
  * DELETE       @DeleteMapping   204 No Content
  */
 @RestController
-@RequestMapping("/api/hotels")
+@RequestMapping("/api/v1/hotels")
 public class HotelController {
 
     private final HotelService hotelService;
@@ -27,8 +31,11 @@ public class HotelController {
 
     // GET /api/hotels
     @GetMapping
-    public List<Hotel> getAll() {
-        return hotelService.findAll();
+    public PageResponse<Hotel> getAll(@RequestParam(required = false) String city,
+                                      @RequestParam(required = false) Double minPrice,
+                                      @RequestParam(required = false) Double maxPrice,
+                                      @PageableDefault(size = 20, sort = "name") Pageable pageable) {
+        return PageResponse.from(hotelService.findAll(city, minPrice, maxPrice, pageable));
     }
 
     // GET /api/hotels/1
@@ -46,13 +53,13 @@ public class HotelController {
     // POST /api/hotels   body: { "name": "Grand Hotel", "city": "Paris", "pricePerNight": 200 }
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Hotel create(@RequestBody Hotel hotel) {
+    public Hotel create(@Valid @RequestBody Hotel hotel) {
         return hotelService.save(hotel);
     }
 
     // PUT /api/hotels/1
     @PutMapping("/{id}")
-    public Hotel update(@PathVariable Long id, @RequestBody Hotel hotel) {
+    public Hotel update(@PathVariable Long id, @Valid @RequestBody Hotel hotel) {
         return hotelService.update(id, hotel);
     }
 

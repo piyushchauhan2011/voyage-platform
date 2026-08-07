@@ -44,6 +44,10 @@ spring:
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
 application:
+  booking:
+    retry:
+      attempts: 3
+      backoff-ms: 50
   kafka:
     enabled: true
     retry:

@@ -7,6 +7,9 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -39,6 +42,13 @@ public class HotelService {
     @Cacheable(cacheNames = "hotelsByCity", key = "#city")
     public List<Hotel> findByCity(String city) {
         return hotelRepository.findByCity(city);
+    }
+
+    public Page<Hotel> findAll(String city, Double minPrice, Double maxPrice, Pageable pageable) {
+        Specification<Hotel> specification = Specification.where(HotelSpecifications.hasCity(city))
+                .and(HotelSpecifications.priceAtLeast(minPrice))
+                .and(HotelSpecifications.priceAtMost(maxPrice));
+        return hotelRepository.findAll(specification, pageable);
     }
 
     public List<Hotel> findAll() {

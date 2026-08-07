@@ -22,7 +22,7 @@ class AuthControllerTest {
 
     @Test
     void register_returnsCreatedWithTokens() throws Exception {
-        mockMvc.perform(post("/api/auth/register")
+                mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 new RegisterRequest("alice", "alice@test.com", "password123"))))
@@ -35,13 +35,13 @@ class AuthControllerTest {
     @Test
     void register_duplicateUsername_returnsConflict() throws Exception {
         RegisterRequest req = new RegisterRequest("bob", "bob@test.com", "password123");
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isCreated());
 
         // Second registration with the same username should fail
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isConflict());
@@ -50,11 +50,11 @@ class AuthControllerTest {
     @Test
     void login_validCredentials_returnsTokens() throws Exception {
         RegisterRequest reg = new RegisterRequest("charlie", "charlie@test.com", "password123");
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(reg)));
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 new LoginRequest("charlie", "password123"))))
@@ -65,12 +65,12 @@ class AuthControllerTest {
 
     @Test
     void login_wrongPassword_returnsUnauthorized() throws Exception {
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(
                         new RegisterRequest("dave", "dave@test.com", "password123"))));
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 new LoginRequest("dave", "wrongpassword"))))
@@ -80,12 +80,12 @@ class AuthControllerTest {
     @Test
     void refresh_withValidToken_returnsNewAccessToken() throws Exception {
         // Register and login to get tokens
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(
                         new RegisterRequest("eve", "eve@test.com", "password123"))));
 
-        String loginBody = mockMvc.perform(post("/api/auth/login")
+        String loginBody = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 new LoginRequest("eve", "password123"))))
@@ -93,7 +93,7 @@ class AuthControllerTest {
 
         String refreshToken = objectMapper.readTree(loginBody).get("refreshToken").asText();
 
-        mockMvc.perform(post("/api/auth/refresh")
+        mockMvc.perform(post("/api/v1/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new RefreshRequest(refreshToken))))
                 .andExpect(status().isOk())
@@ -102,12 +102,12 @@ class AuthControllerTest {
 
     @Test
     void logout_thenRefresh_returnsUnauthorized() throws Exception {
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(
                         new RegisterRequest("frank", "frank@test.com", "password123"))));
 
-        String loginBody = mockMvc.perform(post("/api/auth/login")
+        String loginBody = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 new LoginRequest("frank", "password123"))))
@@ -116,13 +116,13 @@ class AuthControllerTest {
         String refreshToken = objectMapper.readTree(loginBody).get("refreshToken").asText();
 
         // Logout revokes the refresh token
-        mockMvc.perform(post("/api/auth/logout")
+        mockMvc.perform(post("/api/v1/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new RefreshRequest(refreshToken))))
                 .andExpect(status().isNoContent());
 
         // Subsequent refresh attempt should fail
-        mockMvc.perform(post("/api/auth/refresh")
+        mockMvc.perform(post("/api/v1/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new RefreshRequest(refreshToken))))
                 .andExpect(status().isUnauthorized());

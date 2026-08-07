@@ -55,14 +55,14 @@ Optional but useful during Phase 6:
 
 ## Security model to test
 
-- `POST /api/auth/register` is public
-- `POST /api/auth/login` is public
-- `POST /api/auth/refresh` is public
-- `POST /api/auth/logout` is public
-- `GET /api/hotels/**` is public
-- `POST /api/hotels` requires `ROLE_ADMIN`
-- `PUT /api/hotels/{id}` requires `ROLE_ADMIN`
-- `DELETE /api/hotels/{id}` requires `ROLE_ADMIN`
+- `POST /api/v1/auth/register` is public
+- `POST /api/v1/auth/login` is public
+- `POST /api/v1/auth/refresh` is public
+- `POST /api/v1/auth/logout` is public
+- `GET /api/v1/hotels/**` is public
+- `POST /api/v1/hotels` requires `ROLE_ADMIN`
+- `PUT /api/v1/hotels/{id}` requires `ROLE_ADMIN`
+- `DELETE /api/v1/hotels/{id}` requires `ROLE_ADMIN`
 - `GET /ui/kafka` is public
 - `GET /ui/kafka/status` is public and returns recently processed Kafka events
 - `GET /ui/kafka/history` is public and shows the full processed and dead-letter event history

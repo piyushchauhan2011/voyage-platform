@@ -30,6 +30,7 @@ import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializ
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.util.backoff.FixedBackOff;
 import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 
@@ -50,6 +51,7 @@ import java.util.Map;
  *   @Component              → Spring constructs the object for you
  */
 @Configuration
+@EnableRetry
 public class AppConfig {
 
     @Bean

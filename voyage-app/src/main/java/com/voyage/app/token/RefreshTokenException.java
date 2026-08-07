@@ -1,10 +1,9 @@
 package com.voyage.app.token;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import com.voyage.app.exception.UnauthorizedException;
 
-@ResponseStatus(HttpStatus.UNAUTHORIZED)
-public class RefreshTokenException extends RuntimeException {
+public class RefreshTokenException extends UnauthorizedException {
+
     public RefreshTokenException(String message) {
         super(message);
     }

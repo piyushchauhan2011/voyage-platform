@@ -1,0 +1,257 @@
+:root {
+    --bg: #f4ede4;
+    --surface: #fffaf4;
+    --surface-strong: #fff;
+    --text: #1d1a17;
+    --muted: #6a6258;
+    --line: rgba(29, 26, 23, 0.12);
+    --accent: #c4552d;
+    --accent-deep: #7a3019;
+    --success: #2f7a4f;
+    --danger: #ad2c2c;
+    --shadow: 0 24px 60px rgba(71, 48, 22, 0.12);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Georgia, "Times New Roman", serif;
+    color: var(--text);
+    background:
+        radial-gradient(circle at top left, rgba(196, 85, 45, 0.18), transparent 28%),
+        linear-gradient(180deg, #efe3d3 0%, var(--bg) 45%, #f8f3eb 100%);
+}
+
+.workbench-shell {
+    max-width: 1380px;
+    margin: 0 auto;
+    padding: 32px 20px 48px;
+}
+
+.hero-band {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr);
+    gap: 24px;
+    margin-bottom: 28px;
+}
+
+.eyebrow {
+    margin: 0 0 10px;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    color: var(--accent-deep);
+}
+
+.hero-band h1 {
+    margin: 0;
+    font-size: clamp(2.4rem, 5vw, 4rem);
+    line-height: 0.95;
+}
+
+.hero-copy {
+    max-width: 68ch;
+    color: var(--muted);
+    font-size: 1.02rem;
+    line-height: 1.6;
+}
+
+.hero-card,
+.panel {
+    background: rgba(255, 250, 244, 0.88);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(18px);
+}
+
+.hero-card {
+    padding: 24px;
+    align-self: stretch;
+}
+
+.hero-card h2 {
+    margin-top: 0;
+    font-size: 1.1rem;
+}
+
+.hero-card ul {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--muted);
+    line-height: 1.7;
+}
+
+.workbench-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+}
+
+.panel {
+    padding: 22px;
+}
+
+.panel-heading h2 {
+    margin: 0 0 4px;
+}
+
+.panel-heading p {
+    margin: 0 0 18px;
+    color: var(--muted);
+}
+
+.stack-form {
+    display: grid;
+    gap: 14px;
+}
+
+.compact-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.secondary-form {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+}
+
+label {
+    display: grid;
+    gap: 8px;
+    font-size: 0.95rem;
+}
+
+input,
+select,
+textarea,
+button {
+    font: inherit;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    border: 1px solid rgba(29, 26, 23, 0.16);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.82);
+    padding: 12px 14px;
+    color: var(--text);
+}
+
+textarea {
+    resize: vertical;
+}
+
+button {
+    border: 0;
+    border-radius: 999px;
+    padding: 12px 18px;
+    background: linear-gradient(135deg, var(--accent) 0%, #df7c45 100%);
+    color: #fff;
+    cursor: pointer;
+    transition: transform 160ms ease, box-shadow 160ms ease;
+    box-shadow: 0 12px 22px rgba(196, 85, 45, 0.22);
+}
+
+button:hover {
+    transform: translateY(-1px);
+}
+
+.button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 18px 0 12px;
+}
+
+.token-block {
+    margin-top: 16px;
+}
+
+.feedback {
+    min-height: 24px;
+    margin-top: 12px;
+    color: var(--accent-deep);
+}
+
+.feedback.success {
+    color: var(--success);
+}
+
+.feedback.error {
+    color: var(--danger);
+}
+
+.result-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.result-card {
+    background: var(--surface-strong);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 14px 16px;
+}
+
+.result-card h3,
+.result-card p {
+    margin: 0;
+}
+
+.result-card p + p,
+.result-card h3 + p {
+    margin-top: 6px;
+}
+
+.result-meta {
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+.result-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.danger-button {
+    background: linear-gradient(135deg, #9f302f 0%, #c94a48 100%);
+    box-shadow: 0 12px 22px rgba(159, 48, 47, 0.22);
+}
+
+.pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(196, 85, 45, 0.12);
+    color: var(--accent-deep);
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+@media (max-width: 1000px) {
+    .hero-band,
+    .workbench-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .compact-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .workbench-shell {
+        padding-inline: 14px;
+    }
+}

@@ -11,6 +11,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
@@ -24,7 +25,11 @@ import java.time.Instant;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "bookings")
+@Table(name = "bookings", indexes = {
+        @Index(name = "idx_booking_hotel", columnList = "hotel_id"),
+        @Index(name = "idx_booking_hotel_checkin", columnList = "hotel_id, check_in_date"),
+        @Index(name = "idx_booking_user_status", columnList = "user_id, status")
+})
 @Getter
 @Setter
 @NoArgsConstructor

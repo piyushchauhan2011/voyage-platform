@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voyage Postgres Lab</title>
+    <link rel="stylesheet" th:href="@{/css/booking-workbench.css}">
+    <link rel="stylesheet" th:href="@{/css/postgres-lab.css}">
+</head>
+<body>
+<div class="workbench-shell">
+    <header class="hero-band">
+        <div>
+            <p class="eyebrow">PostgreSQL lab</p>
+            <h1>Indexes, EXPLAIN, partitions, locks</h1>
+            <p class="hero-copy">
+                Seed volume data, drop and restore indexes, run <code>EXPLAIN ANALYZE</code>,
+                set up RANGE partitions, and observe isolation differences — same topics as
+                <code>postgres-lab/*.sql</code>, triggered from the app.
+            </p>
+        </div>
+        <div class="hero-card">
+            <h2>Suggested path</h2>
+            <ul>
+                <li>Login as ADMIN and seed volume data.</li>
+                <li>Explain <code>booking_by_hotel</code>, drop <code>idx_booking_hotel</code>, explain again.</li>
+                <li>Set up partitioning and inspect pruning.</li>
+                <li>Run isolation demos; compare with BookingService / inventory locks.</li>
+            </ul>
+        </div>
+    </header>
+
+    <main class="workbench-grid postgres-grid">
+        <section class="panel auth-panel">
+            <div class="panel-heading">
+                <h2>Auth helper</h2>
+                <p>Admin JWT required for <strong>/api/postgres/playground</strong>.</p>
+            </div>
+            <form id="login-form" class="stack-form">
+                <label>Username<input type="text" name="username" autocomplete="username" placeholder="admin"></label>
+                <label>Password<input type="password" name="password" autocomplete="current-password" placeholder="password123"></label>
+                <button type="submit">Login</button>
+            </form>
+            <label class="token-block">
+                Active access token
+                <textarea id="token-input" rows="5" placeholder="Paste a Bearer token here."></textarea>
+            </label>
+            <div id="auth-feedback" class="feedback" aria-live="polite"></div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <h2>Seed &amp; indexes</h2>
+                <p>Create Lab Hotel 1–50 and bulk bookings, then toggle indexes.</p>
+            </div>
+            <div class="button-row">
+                <button type="button" id="seed-btn">Seed volume data</button>
+                <button type="button" id="list-indexes-btn" class="secondary">List indexes</button>
+            </div>
+            <div class="button-row wrap">
+                <button type="button" class="secondary index-drop" data-index="idx_booking_hotel">Drop idx_booking_hotel</button>
+                <button type="button" class="secondary index-create" data-index="idx_booking_hotel">Create idx_booking_hotel</button>
+                <button type="button" class="secondary index-drop" data-index="idx_booking_hotel_checkin">Drop composite</button>
+                <button type="button" class="secondary index-create" data-index="idx_booking_hotel_checkin">Create composite</button>
+                <button type="button" class="secondary index-drop" data-index="idx_hotel_city">Drop idx_hotel_city</button>
+                <button type="button" class="secondary index-create" data-index="idx_hotel_city">Create idx_hotel_city</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <h2>EXPLAIN ANALYZE</h2>
+                <p>Compare plans before and after dropping indexes.</p>
+            </div>
+            <div class="button-row wrap">
+                <button type="button" class="explain-btn" data-scenario="booking_by_hotel">booking_by_hotel</button>
+                <button type="button" class="explain-btn" data-scenario="booking_by_hotel_checkin">booking_by_hotel_checkin</button>
+                <button type="button" class="explain-btn" data-scenario="hotel_by_city">hotel_by_city</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <h2>Partitioning &amp; concurrency</h2>
+                <p>Dedicated <code>pg_lab_bookings</code> table; lock hold max 10s.</p>
+            </div>
+            <div class="button-row wrap">
+                <button type="button" id="partition-setup-btn">Setup partitions</button>
+                <button type="button" id="partition-explain-btn" class="secondary">Explain pruning</button>
+                <button type="button" id="lock-hold-btn" class="secondary">Hold FOR UPDATE (3s)</button>
+                <button type="button" class="isolation-btn" data-scenario="read_committed_non_repeatable">READ COMMITTED demo</button>
+                <button type="button" class="isolation-btn" data-scenario="repeatable_read_stable">REPEATABLE READ demo</button>
+            </div>
+        </section>
+
+        <section class="panel output-panel">
+            <div class="panel-heading">
+                <h2>Output</h2>
+                <p id="output-meta" class="hero-copy">Results appear here.</p>
+            </div>
+            <pre id="output-panel" class="plan-output" aria-live="polite">Ready.</pre>
+        </section>
+    </main>
+</div>
+
+<script th:inline="javascript">
+    window.postgresLabConfig = {
+        storageKey: 'voyage.postgres.lab.token',
+        loginUrl: /*[[@{/api/v1/auth/login}]]*/ '/api/v1/auth/login',
+        baseUrl: /*[[@{/api/postgres/playground}]]*/ '/api/postgres/playground'
+    };
+</script>
+<script th:src="@{/js/postgres-lab.js}"></script>
+</body>
+</html>

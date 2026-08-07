@@ -8,6 +8,7 @@ This folder gives a new developer or tester two ways to verify the API and the P
 There is also a helper script for managing QA users outside the main end-to-end flow.
 There is now a separate Kafka hardening script focused on retries, dead-letter handling, and replay.
 There is now a separate Redis verification script focused on cache population, TTL checks, playground structures, pub/sub, and locks.
+There is now a Postgres lab seed script (`seed_postgres_lab.sh`) that seeds volume data and runs an `EXPLAIN` via `/api/postgres/playground` (see also `postgres-lab/` SQL scripts and `/ui/postgres`).
 
 ## Prerequisites
 

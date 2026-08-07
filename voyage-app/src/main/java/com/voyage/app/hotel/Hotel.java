@@ -15,7 +15,9 @@ import lombok.Setter;
  * Lifecycle:  NEW → MANAGED (after persist) → DETACHED (after transaction ends) → REMOVED
  */
 @Entity
-@Table(name = "hotels")
+@Table(name = "hotels", indexes = {
+        @Index(name = "idx_hotel_city", columnList = "city")
+})
 @Getter
 @Setter
 @NoArgsConstructor

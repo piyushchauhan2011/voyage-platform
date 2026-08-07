@@ -112,7 +112,67 @@ Instantiation → Dependency injection → @PostConstruct → [ready] → @PreDe
 Key interview topics to explore next:
 - N+1 problem (fetch a hotel's rooms — watch the SQL with `show-sql: true`)
 - `@Transactional` propagation and isolation levels
-- `EXPLAIN ANALYZE` on your queries in pgAdmin
+- `EXPLAIN ANALYZE` on your queries in pgAdmin — see **PostgreSQL lab** below
+
+### PostgreSQL lab
+Hands-on indexes, composite indexes, the query planner, `EXPLAIN ANALYZE`, partitioning, locks, and isolation.
+
+| Path | What it is |
+|---|---|
+| [`postgres-lab/`](postgres-lab/) | Curated `.sql` scripts for `psql` / pgAdmin |
+| `/ui/postgres` | Thymeleaf workbench (admin JWT) |
+| `/api/postgres/playground` | Same labs via REST (ADMIN) |
+
+Suggested learning path:
+
+1. Start Postgres + the app, open http://localhost:8080/ui/postgres, login as ADMIN.
+2. Click **Seed volume data** (creates Lab Hotel 1–50 and bulk bookings).
+3. Run **booking_by_hotel** explain → drop `idx_booking_hotel` → explain again → recreate index.
+4. Compare composite vs single-column with **booking_by_hotel_checkin**.
+5. **Setup partitions** on `pg_lab_bookings`, then **Explain pruning**.
+6. Run READ COMMITTED vs REPEATABLE READ demos; compare with `BookingService` (`REPEATABLE_READ`) and `RoomInventoryRepository.findForUpdate` (`FOR UPDATE`).
+
+Or from SQL:
+
+```bash
+docker cp postgres-lab/. voyage-postgres:/tmp/postgres-lab/
+docker exec -it voyage-postgres psql -U voyage -d voyage_db -f /tmp/postgres-lab/00_seed_volume.sql
+docker exec -it voyage-postgres psql -U voyage -d voyage_db -f /tmp/postgres-lab/01_indexes_explain.sql
+```
+
+Quick API examples (admin bearer token):
+
+```bash
+# Seed volume data
+curl -X POST http://localhost:8080/api/postgres/playground/seed \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+
+# EXPLAIN ANALYZE — bookings by hotel (your hotel_id example)
+curl -X POST http://localhost:8080/api/postgres/playground/explain \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"scenario":"booking_by_hotel"}'
+
+# Drop / recreate the hotel_id index and re-run explain
+curl -X POST http://localhost:8080/api/postgres/playground/indexes/idx_booking_hotel/drop \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+curl -X POST http://localhost:8080/api/postgres/playground/indexes/idx_booking_hotel/create \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+
+# Partitioning
+curl -X POST http://localhost:8080/api/postgres/playground/partitioning/setup \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+curl http://localhost:8080/api/postgres/playground/partitioning/explain \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+
+# Isolation demo
+curl -X POST http://localhost:8080/api/postgres/playground/isolation/demo \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"scenario":"repeatable_read_stable"}'
+```
+
+Helper script: `bash api_manual_checks/seed_postgres_lab.sh`
 
 ### Kafka & async messaging
 Phase 5 is implemented as a hotel event stream:
@@ -335,7 +395,7 @@ Manual QA steps for the DLT and replay flow:
 ### Connecting pgAdmin to Postgres
 1. Open http://localhost:5050
 2. Add server → Host: `postgres`, Port: `5432`, DB: `voyage_db`, User: `voyage`, Password: `voyage`
-3. Run `EXPLAIN ANALYZE` on your queries to study query plans
+3. Run the scripts in [`postgres-lab/`](postgres-lab/) — start with `00_seed_volume.sql` then `01_indexes_explain.sql` — or use `/ui/postgres`
 
 ### Stopping everything
 ```bash

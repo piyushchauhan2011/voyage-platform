@@ -7,7 +7,7 @@ A Maven monorepo for learning backend Java and Spring Boot — structured around
 | Module | Stack | Purpose |
 |---|---|---|
 | [`voyage-app`](voyage-app/) | Spring Boot 4.1 · PostgreSQL · JPA · Kafka · RabbitMQ · Thymeleaf · Spring AI | Spring fundamentals: IoC, DI, REST, JPA, bean lifecycle, async messaging, AI |
-| [`java-mastery`](java-mastery/) | Plain Java 21 | Core Java: OOP, Collections internals, Streams & lambdas |
+| [`java-mastery`](java-mastery/) | Plain Java 21 | Core Java: OOP, Collections, Streams, JVM internals, Multithreading |
 
 ---
 
@@ -431,6 +431,41 @@ bookings.stream()
 
 Also covers `groupingBy`, `flatMap`, `mapToDouble().sum()`, and `Optional` from `average()`.
 
+### JVM internals — `jvm/`
+`JvmDemo.java` walks the senior interview map:
+
+```
+.class bytecode  →  JVM  →  Heap / Stack / Metaspace  →  GC
+```
+
+- **Heap** — objects & arrays (shared); sized with `-Xms` / `-Xmx`
+- **Stack** — per-thread frames (locals, calls); sized with `-Xss`
+- **Metaspace** — class metadata (native memory); capped with `-XX:MaxMetaspaceSize`
+
+Heap generations: Eden → Survivor → Old. Most objects die in Eden (minor GC); long-lived work promotes to Old.
+
+| Collector | Goal | Typical use |
+|---|---|---|
+| Parallel | Throughput | Batch / offline jobs |
+| G1 | Balanced pauses (default) | Most web services |
+| ZGC | Ultra-low latency | Large heaps, tight p99 |
+
+Flags cheat sheet is printed by the demo (`-XX:+UseG1GC`, `-XX:+UseZGC`, `-Xlog:gc*`, …).
+
+### Multithreading — `concurrency/`
+`ConcurrencyDemo.java` covers the must-master APIs:
+
+`Thread` / `Runnable` → `Callable` + `Future` → `CompletableFuture` → `ExecutorService` vs `ForkJoinPool` → `synchronized` / `ReentrantLock` → `volatile` (visibility ≠ atomicity) → `AtomicInteger` vs plain `int++`.
+
+`DoubleBookingDemo.java` is the interview centerpiece: **1000 threads, 1 room**.
+
+1. **Broken** — unsynchronized check-then-act → oversell
+2. **Fixed A** — `synchronized`
+3. **Fixed B** — `ReentrantLock`
+4. **Fixed C** — `AtomicInteger.compareAndSet`
+
+Production sequel in `voyage-app`: `RoomInventoryRepository.findForUpdate` (`PESSIMISTIC_WRITE`) + `InventoryService.reserveRoom` under `@Transactional` — same race, row-level DB lock.
+
 ---
 
 ## Infrastructure reference
@@ -623,7 +658,7 @@ Full walkthrough, curl examples, and Gemini-specific gotchas: [`ai-lab/README.md
 
 This repo is structured to grow with the learning plan:
 
-- **Phase 1 (now)** — `java-mastery`: OOP, Collections, Streams
+- **Phase 1 (now)** — `java-mastery`: OOP, Collections, Streams, JVM, Multithreading
 - **Phase 2–3 (now)** — `voyage-app`: Spring Core, REST, JPA
 - **Phase 4** — add Spring Security + JWT to `voyage-app`
 - **Phase 5 (complete)** — Kafka producer/consumer + Thymeleaf event dashboard for hotel mutations

@@ -12,7 +12,7 @@
 
 	<artifactId>java-mastery</artifactId>
 	<name>java-mastery</name>
-	<description>Plain Java — OOP, Collections, Streams</description>
+	<description>Plain Java — OOP, Collections, Streams, JVM internals, Multithreading</description>
 
 	<build>
 		<plugins>

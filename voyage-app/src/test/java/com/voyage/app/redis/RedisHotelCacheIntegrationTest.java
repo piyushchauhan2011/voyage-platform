@@ -7,6 +7,10 @@ import com.voyage.app.hotel.Hotel;
 import com.voyage.app.hotel.HotelNotFoundException;
 import com.voyage.app.hotel.HotelRepository;
 import com.voyage.app.hotel.HotelService;
+import com.voyage.app.token.RefreshTokenRepository;
+import com.voyage.app.user.Role;
+import com.voyage.app.user.User;
+import com.voyage.app.user.UserRepository;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +18,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest(classes = VoyageAppApplication.class)
@@ -24,10 +32,28 @@ class RedisHotelCacheIntegrationTest extends RedisIntegrationTestSupport {
   @Autowired HotelRepository hotelRepository;
   @Autowired StringRedisTemplate stringRedisTemplate;
   @Autowired CacheManager cacheManager;
+  @Autowired UserRepository userRepository;
+  @Autowired RefreshTokenRepository refreshTokenRepository;
+  @Autowired PasswordEncoder passwordEncoder;
 
   @BeforeEach
-  void clearHotels() {
+  void clearHotelsAndAuthenticateAdmin() {
     hotelRepository.deleteAll();
+    refreshTokenRepository.deleteAll();
+    userRepository.deleteAll();
+    User admin =
+        userRepository.save(
+            new User(
+                "redis-cache-admin",
+                "redis-cache-admin@test.com",
+                passwordEncoder.encode("password123"),
+                Role.ADMIN));
+    SecurityContextHolder.getContext()
+        .setAuthentication(
+            new UsernamePasswordAuthenticationToken(
+                admin.getUsername(),
+                null,
+                List.of(new SimpleGrantedAuthority("ROLE_" + admin.getRole().name()))));
   }
 
   @Test

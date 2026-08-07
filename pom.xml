@@ -36,6 +36,8 @@
 		<spotbugs-maven-plugin.version>4.9.3.0</spotbugs-maven-plugin.version>
 		<jacoco.version>0.8.13</jacoco.version>
 		<jacoco.line.coverage.minimum>0.40</jacoco.line.coverage.minimum>
+		<!-- Set -DskipUnitTests=true to run Failsafe only (CI integration job) -->
+		<skipUnitTests>false</skipUnitTests>
 
 		<project.root.dir>${maven.multiModuleProjectDirectory}</project.root.dir>
 	</properties>
@@ -170,6 +172,7 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-surefire-plugin</artifactId>
 					<configuration>
+						<skipTests>${skipUnitTests}</skipTests>
 						<!-- Unit / in-process tests only; Docker ITs go to Failsafe -->
 						<excludes>
 							<exclude>**/*IT.java</exclude>
@@ -276,6 +279,11 @@
 						<phase>verify</phase>
 					</execution>
 				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
 			</plugin>
 
 			<plugin>

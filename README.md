@@ -82,7 +82,7 @@ open http://localhost:8080/ui/ai
 ./mvnw test
 
 # Integration tests (Failsafe) — *IntegrationTest / *IT; Testcontainers when Docker is available
-./mvnw verify -pl voyage-app -Dsurefire.skip=true
+./mvnw verify -pl voyage-app -DskipUnitTests=true
 
 # Full verify: unit + integration + quality plugins bound to verify
 ./mvnw verify -pl voyage-app

@@ -88,7 +88,7 @@ jobs:
       - name: Run Failsafe integration tests
         run: >
           ./mvnw -B -ntp verify
-          -Dsurefire.skip=true
+          -DskipUnitTests=true
           -Djacoco.skip=true
           -Dspotbugs.skip=true
           -Dpmd.skip=true

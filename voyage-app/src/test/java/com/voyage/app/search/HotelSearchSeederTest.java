@@ -40,8 +40,13 @@ class HotelSearchSeederTest {
     ArgumentCaptor<List<Hotel>> captor = ArgumentCaptor.forClass(List.class);
     verify(hotelRepository).saveAll(captor.capture());
     assertThat(captor.getValue()).hasSize(25);
-    assertThat(captor.getValue().getFirst().getNameTh()).isNotBlank();
-    assertThat(captor.getValue().getFirst().getCityTh()).isNotBlank();
+    Hotel first = captor.getValue().getFirst();
+    assertThat(first.getNameTh()).isNotBlank();
+    assertThat(first.getCityTh()).isNotBlank();
+    assertThat(first.getImageUrl()).contains("picsum.photos");
+    assertThat(first.getStarRating()).isBetween(3, 5);
+    assertThat(first.getAddress()).isNotBlank();
+    assertThat(first.getAddressTh()).isNotBlank();
     assertThat(result.created()).isEqualTo(25);
     assertThat(result.totalHotels()).isEqualTo(25L);
   }

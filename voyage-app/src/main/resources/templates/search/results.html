@@ -16,32 +16,51 @@
 
         <ul class="hotel-result-list" th:if="${!searchPage.content().isEmpty()}">
             <li class="hotel-result-card" th:each="hit : ${searchPage.content()}">
-                <div class="hotel-result-top">
-                    <h3 th:text="${currentLang == 'th' and hit.nameTh() != null and !hit.nameTh().isBlank()} ? ${hit.nameTh()} : ${hit.name}">
-                        Hotel name
-                    </h3>
-                    <span class="score-pill"
-                          th:text="#{search.results.score} + ' ' + ${#numbers.formatDecimal(hit.score(), 1, 2)}">
-                        score 1.0
-                    </span>
+                <div class="hotel-result-media" th:if="${hit.imageUrl() != null and !hit.imageUrl().isBlank()}">
+                    <img th:src="${hit.imageUrl()}" th:alt="${hit.name()}" loading="lazy" width="320" height="200">
                 </div>
-                <p class="hotel-city"
-                   th:text="${currentLang == 'th' and hit.cityTh() != null and !hit.cityTh().isBlank()} ? ${hit.cityTh()} : ${hit.city}">
-                    City
-                </p>
-                <p class="hotel-price">
-                    <strong th:text="${#numbers.formatDecimal(hit.pricePerNight(), 1, 0)}">100</strong>
-                    <span th:text="#{search.results.perNight}">/ night</span>
-                </p>
-                <p class="hotel-description"
-                   th:text="${currentLang == 'th' and hit.descriptionTh() != null and !hit.descriptionTh().isBlank()}
-                       ? ${hit.descriptionTh()}
-                       : ${hit.description}">
-                    Description
-                </p>
-                <ul class="highlight-list" th:if="${hit.highlights() != null and !hit.highlights().isEmpty()}">
-                    <li th:each="snippet : ${hit.highlights()}" th:utext="${snippet}">match</li>
-                </ul>
+                <div class="hotel-result-body">
+                    <div class="hotel-result-top">
+                        <h3 th:text="${currentLang == 'th' and hit.nameTh() != null and !hit.nameTh().isBlank()} ? ${hit.nameTh()} : ${hit.name}">
+                            Hotel name
+                        </h3>
+                        <span class="score-pill"
+                              th:text="#{search.results.score} + ' ' + ${#numbers.formatDecimal(hit.score(), 1, 2)}">
+                            score 1.0
+                        </span>
+                    </div>
+                    <p class="hotel-meta-row">
+                        <span class="hotel-city"
+                              th:text="${currentLang == 'th' and hit.cityTh() != null and !hit.cityTh().isBlank()} ? ${hit.cityTh()} : ${hit.city}">
+                            City
+                        </span>
+                        <span th:if="${hit.starRating() != null}"
+                              class="star-rating"
+                              th:text="${hit.starRating()} + '★'">4★</span>
+                        <span th:if="${hit.guestRating() != null}"
+                              class="guest-rating"
+                              th:text="${#numbers.formatDecimal(hit.guestRating(), 1, 1)}">8.5</span>
+                    </p>
+                    <p class="hotel-price">
+                        <strong th:text="${#numbers.formatDecimal(hit.pricePerNight(), 1, 0)}">100</strong>
+                        <span th:text="#{search.results.perNight}">/ night</span>
+                    </p>
+                    <p class="hotel-description"
+                       th:text="${currentLang == 'th' and hit.descriptionTh() != null and !hit.descriptionTh().isBlank()}
+                           ? ${hit.descriptionTh()}
+                           : ${hit.description}">
+                        Description
+                    </p>
+                    <ul class="highlight-list" th:if="${hit.highlights() != null and !hit.highlights().isEmpty()}">
+                        <li th:each="snippet : ${hit.highlights()}" th:utext="${snippet}">match</li>
+                    </ul>
+                    <div class="button-row">
+                        <button type="button"
+                                class="secondary hotel-details-btn"
+                                th:attr="data-hotel-id=${hit.id()}"
+                                th:text="#{search.detail.open}">Details</button>
+                    </div>
+                </div>
             </li>
         </ul>
     </div>

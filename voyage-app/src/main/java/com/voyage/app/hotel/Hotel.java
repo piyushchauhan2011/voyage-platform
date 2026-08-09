@@ -75,6 +75,44 @@ public class Hotel {
   @Column(name = "description_th", length = 2000)
   private String descriptionTh;
 
+  /** Cover image URL for search cards and the detail dialog (lab uses picsum.photos). */
+  @Column(name = "image_url", length = 500)
+  private String imageUrl;
+
+  /** Comma-separated gallery image URLs. */
+  @Column(name = "gallery_urls", length = 1500)
+  private String galleryUrls;
+
+  @Column(name = "star_rating")
+  private Integer starRating;
+
+  @Column(name = "guest_rating")
+  private Double guestRating;
+
+  @Column(name = "review_count")
+  private Integer reviewCount;
+
+  @Column(length = 500)
+  private String address;
+
+  @Column(name = "address_th", length = 500)
+  private String addressTh;
+
+  @Column(length = 255)
+  private String neighborhood;
+
+  @Column(name = "neighborhood_th", length = 255)
+  private String neighborhoodTh;
+
+  @Column(name = "check_in_from", length = 16)
+  private String checkInFrom;
+
+  @Column(name = "check_out_until", length = 16)
+  private String checkOutUntil;
+
+  @Column(length = 64)
+  private String phone;
+
   /**
    * Hotel manager who owns this property (ABAC attribute). Null when created by an admin without
    * assignment.

@@ -7,7 +7,7 @@ Learn full-text hotel search with **Spring Data Elasticsearch**: Postgres is the
 | Approach | Good for | Weak at |
 |---|---|---|
 | JPA / SQL (`GET /api/v1/hotels?city=`) | Exact filters, joins, transactions | Ranked free-text, Thai segmentation |
-| Elasticsearch (`GET /api/v1/search/hotels?q=`) | Analyzers, relevance, highlights | Being the system of record |
+| Elasticsearch (`GET /api/v1/search/hotels?q=`) | Analyzers, relevance, highlights, autocomplete | Being the system of record |
 | pgvector (`/ui/ai`) | Semantic similarity ("near the sand") | Exact token search, ops simplicity |
 
 ## Start
@@ -31,7 +31,7 @@ docker volume rm voyage-platform_elasticsearch-data
 docker compose --profile elasticsearch up -d
 ```
 
-Toggle **ไทย** in the page header (`?lang=th`) — UI strings come from `messages_th.properties`, and search boosts Thai fields.
+Toggle **ไทย** in the page header (`?lang=th`) — UI strings come from `messages_th.properties`, and search/suggest boost Thai fields.
 
 ## Create an ADMIN user
 
@@ -56,23 +56,41 @@ Or open http://localhost:8080/ui/search and use the admin panel with `admin` / `
 ## Lab path
 
 1. Login as ADMIN in the playground panel (see above if you need to create the user).
-2. **Seed hotels** — writes ~100 bilingual rows to Postgres (`name` + `nameTh`, etc.).
-3. **Reindex** — builds the `hotels` index and bulk-loads documents.
-4. Search `beach`, then `ชายหาด`. Same intent, different tokens / analyzers.
-5. Call explain: `GET /api/search/playground/explain?q=ชายหาด&lang=th`
+2. **Seed hotels** — writes ~100 bilingual rows to Postgres (names, addresses, ratings, picsum image URLs).
+3. **Reindex** — recreates the `hotels` index (needed after mapping changes) and bulk-loads documents.
+4. Type in the search box for **autocomplete** — try `Phu` or `กรุ` with Thai locale.
+5. Click a suggestion to fill the query and refresh the results list.
+6. Open **Details** on a card for address, check-in/out, gallery, and ratings (loaded from Postgres).
+7. Full-text search `beach` vs `ชายหาด`. Same intent, different tokens / analyzers.
+
+## Autocomplete: debounce vs throttle
+
+Client JS in `search-lab.js` teaches both:
+
+- **Debounce (280ms)** — wait until typing pauses before considering a suggest call.
+- **Throttle (300ms)** — even after debounce, cap how often `/suggest` can hit the network.
+
+Backend: `GET /api/v1/search/hotels/suggest?q=&lang=` uses `multi_match` with `type=bool_prefix` over `search_as_you_type` fields (`nameSuggest` / `nameThSuggest` / cities) so Thai prefixes use the Thai analyzer.
 
 ## Concepts to notice
 
-- **Dual-write / reindex**: creating a hotel via the API also upserts ES when search is enabled; Seed only touches Postgres until you Reindex (or rely on per-row sync after creates through `HotelService`).
+- **Dual-write / reindex**: creating a hotel via the API also upserts ES when search is enabled; Seed only touches Postgres until you Reindex. Reindex **drops and recreates** the index so new mappings (suggest fields) apply.
 - **Analyzers**: English fields use the built-in `english` analyzer; Thai fields use built-in `thai` (segments without spaces).
-- **Locale-biased `multi_match`**: `lang=th` boosts `nameTh` / `cityTh` / `descriptionTh`; `lang=en` boosts English fields.
-- **HTMX fragment**: `/ui/search/results` returns a Thymeleaf partial — no client-side JSON templating required for the result list.
+- **Locale-biased `multi_match`**: `lang=th` boosts Thai fields for both search and suggest.
+- **HTMX fragment**: `/ui/search/results` and `/ui/search/hotels/{id}` return Thymeleaf partials — list + detail dialog without client JSON templating.
+- **Detail source of truth**: the dialog reads Postgres (`HotelRepository`), not only the ES document.
 
 ## API cheat sheet
 
 ```bash
 # Public search
 curl 'http://localhost:8080/api/v1/search/hotels?q=%E0%B8%8A%E0%B8%B2%E0%B8%A2%E0%B8%AB%E0%B8%B2%E0%B8%94&lang=th'
+
+# Autocomplete (Thai)
+curl 'http://localhost:8080/api/v1/search/hotels/suggest?q=%E0%B8%81%E0%B8%A3%E0%B8%B8&lang=th'
+
+# Hotel detail JSON
+curl 'http://localhost:8080/api/v1/search/hotels/1'
 
 # Admin (Bearer token from /api/v1/auth/login)
 curl -X POST -H "Authorization: Bearer $TOKEN" \

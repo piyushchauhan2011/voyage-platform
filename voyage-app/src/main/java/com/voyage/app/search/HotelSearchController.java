@@ -1,8 +1,10 @@
 package com.voyage.app.search;
 
+import java.util.List;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -41,5 +43,18 @@ public class HotelSearchController {
         minPrice,
         maxPrice,
         PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 50)));
+  }
+
+  @GetMapping("/hotels/suggest")
+  public List<HotelSearchService.HotelSuggestion> suggest(
+      @RequestParam String q,
+      @RequestParam(required = false, defaultValue = "en") String lang,
+      @RequestParam(required = false, defaultValue = "8") int size) {
+    return hotelSearchService.suggest(q, lang, size);
+  }
+
+  @GetMapping("/hotels/{id}")
+  public HotelSearchService.HotelDetail hotelDetail(@PathVariable Long id) {
+    return hotelSearchService.detail(id);
   }
 }

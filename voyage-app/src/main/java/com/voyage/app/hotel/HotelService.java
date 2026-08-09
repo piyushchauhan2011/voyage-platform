@@ -119,6 +119,18 @@ public class HotelService {
     hotel.setNameTh(updates.getNameTh());
     hotel.setCityTh(updates.getCityTh());
     hotel.setDescriptionTh(updates.getDescriptionTh());
+    hotel.setImageUrl(updates.getImageUrl());
+    hotel.setGalleryUrls(updates.getGalleryUrls());
+    hotel.setStarRating(updates.getStarRating());
+    hotel.setGuestRating(updates.getGuestRating());
+    hotel.setReviewCount(updates.getReviewCount());
+    hotel.setAddress(updates.getAddress());
+    hotel.setAddressTh(updates.getAddressTh());
+    hotel.setNeighborhood(updates.getNeighborhood());
+    hotel.setNeighborhoodTh(updates.getNeighborhoodTh());
+    hotel.setCheckInFrom(updates.getCheckInFrom());
+    hotel.setCheckOutUntil(updates.getCheckOutUntil());
+    hotel.setPhone(updates.getPhone());
     // manager + saasPlan only change via updateManagement
     Hotel updatedHotel = hotelRepository.save(hotel);
     publishEvent(HotelEventType.UPDATED, updatedHotel);

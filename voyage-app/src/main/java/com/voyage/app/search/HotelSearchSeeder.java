@@ -49,22 +49,102 @@ public class HotelSearchSeeder {
         hotelRepository.count(),
         created.stream().limit(12).map(Hotel::getName).toList(),
         "Hotels are in Postgres only until you Reindex. Elasticsearch does not read SQL tables by itself.",
-        "Try searching beach / ชายหาด and Bangkok / กรุงเทพ after reindex — same hotels, different analyzers.");
+        "Try autocomplete on กรุ / Phu, then open Details on a result card.");
   }
 
   private List<Hotel> catalog(int count) {
     List<City> cities =
         List.of(
-            new City("Bangkok", "กรุงเทพ", "city hub", "ใจกลางเมือง"),
-            new City("Phuket", "ภูเก็ต", "beach and sand", "ชายหาดและทะเล"),
-            new City("Chiang Mai", "เชียงใหม่", "mountain temples", "วัดบนภูเขา"),
-            new City("Krabi", "กระบี่", "limestone cliffs by the sea", "หน้าผาหินปูนริมทะเล"),
-            new City("Hua Hin", "หัวหิน", "quiet beach promenade", "ทางเดินชายหาดเงียบสงบ"),
-            new City("Pattaya", "พัทยา", "nightlife near the shore", "ชีวิตกลางคืนใกล้ชายฝั่ง"),
-            new City("Ayutthaya", "อยุธยา", "historic ruins", "โบราณสถาน"),
-            new City("Tokyo", "โตเกียว", "neon streets", "ถนนไฟนีออน"),
-            new City("Singapore", "สิงคโปร์", "harbour skyline", "เส้นขอบฟ้าท่าเรือ"),
-            new City("Bali", "บาหลี", "rice terraces and surf", "นาขั้นบันไดและคลื่นเซิร์ฟ"));
+            new City(
+                "Bangkok",
+                "กรุงเทพ",
+                "city hub",
+                "ใจกลางเมือง",
+                "Sukhumvit",
+                "สุขุมวิท",
+                "12 Sukhumvit Soi 11",
+                "ซอยสุขุมวิท 11"),
+            new City(
+                "Phuket",
+                "ภูเก็ต",
+                "beach and sand",
+                "ชายหาดและทะเล",
+                "Patong",
+                "ป่าตอง",
+                "88 Beach Road",
+                "ถนนชายหาด 88"),
+            new City(
+                "Chiang Mai",
+                "เชียงใหม่",
+                "mountain temples",
+                "วัดบนภูเขา",
+                "Old City",
+                "เมืองเก่า",
+                "45 Ratchadamnoen Rd",
+                "ถนนราชดำเนิน 45"),
+            new City(
+                "Krabi",
+                "กระบี่",
+                "limestone cliffs by the sea",
+                "หน้าผาหินปูนริมทะเล",
+                "Ao Nang",
+                "อ่าวนาง",
+                "9 Cliffside Lane",
+                "ซอยหน้าผา 9"),
+            new City(
+                "Hua Hin",
+                "หัวหิน",
+                "quiet beach promenade",
+                "ทางเดินชายหาดเงียบสงบ",
+                "Town Centre",
+                "ใจกลางเมือง",
+                "22 Phetkasem Rd",
+                "ถนนเพชรเกษม 22"),
+            new City(
+                "Pattaya",
+                "พัทยา",
+                "nightlife near the shore",
+                "ชีวิตกลางคืนใกล้ชายฝั่ง",
+                "Central Pattaya",
+                "พัทยากลาง",
+                "101 Beachfront Ave",
+                "ถนนริมหาด 101"),
+            new City(
+                "Ayutthaya",
+                "อยุธยา",
+                "historic ruins",
+                "โบราณสถาน",
+                "Historic Park",
+                "อุทยานประวัติศาสตร์",
+                "7 U-Thong Rd",
+                "ถนนอู่ทอง 7"),
+            new City(
+                "Tokyo",
+                "โตเกียว",
+                "neon streets",
+                "ถนนไฟนีออน",
+                "Shinjuku",
+                "ชินจูกุ",
+                "3-1-1 Nishi-Shinjuku",
+                "นิชิชินจูกุ 3-1-1"),
+            new City(
+                "Singapore",
+                "สิงคโปร์",
+                "harbour skyline",
+                "เส้นขอบฟ้าท่าเรือ",
+                "Marina Bay",
+                "มารีน่าเบย์",
+                "1 Bayfront Ave",
+                "เบย์ฟรอนต์ 1"),
+            new City(
+                "Bali",
+                "บาหลี",
+                "rice terraces and surf",
+                "นาขั้นบันไดและคลื่นเซิร์ฟ",
+                "Canggu",
+                "ชางกู",
+                "18 Surf Street",
+                "ถนนเซิร์ฟ 18"));
 
     List<Theme> themes =
         List.of(
@@ -157,12 +237,46 @@ public class HotelSearchSeeder {
               city.th(),
               descriptionTh);
       hotel.setSaasPlan(i % 7 == 0 ? SaasPlan.PRO : SaasPlan.FREE);
+      String seed = slug(name);
+      hotel.setImageUrl("https://picsum.photos/seed/" + seed + "/800/500");
+      hotel.setGalleryUrls(
+          "https://picsum.photos/seed/"
+              + seed
+              + "-a/800/500,"
+              + "https://picsum.photos/seed/"
+              + seed
+              + "-b/800/500,"
+              + "https://picsum.photos/seed/"
+              + seed
+              + "-c/800/500");
+      hotel.setStarRating(3 + (i % 3));
+      hotel.setGuestRating(7.5 + (i % 20) * 0.1);
+      hotel.setReviewCount(40 + (i * 17) % 900);
+      hotel.setAddress(city.enAddress() + ", " + city.en());
+      hotel.setAddressTh(city.thAddress() + " " + city.th());
+      hotel.setNeighborhood(city.enNeighborhood());
+      hotel.setNeighborhoodTh(city.thNeighborhood());
+      hotel.setCheckInFrom("14:00");
+      hotel.setCheckOutUntil("12:00");
+      hotel.setPhone("+66-2-" + String.format("%03d-%04d", 100 + (i % 800), 1000 + (i % 8000)));
       hotels.add(hotel);
     }
     return hotels;
   }
 
-  private record City(String en, String th, String enVibe, String thVibe) {}
+  private static String slug(String name) {
+    return name.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", "");
+  }
+
+  private record City(
+      String en,
+      String th,
+      String enVibe,
+      String thVibe,
+      String enNeighborhood,
+      String thNeighborhood,
+      String enAddress,
+      String thAddress) {}
 
   private record Theme(
       String enName, String thName, String enDescription, String thDescription, String amenities) {}

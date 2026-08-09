@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="detail" class="hotel-detail" th:if="${hotel != null}">
+    <div class="hotel-detail-hero" th:if="${hotel.imageUrl() != null and !hotel.imageUrl().isBlank()}">
+        <img th:src="${hotel.imageUrl()}"
+             th:alt="${currentLang == 'th' and hotel.nameTh() != null and !hotel.nameTh().isBlank()} ? ${hotel.nameTh()} : ${hotel.name}"
+             width="800" height="500">
+    </div>
+
+    <h2 th:text="${currentLang == 'th' and hotel.nameTh() != null and !hotel.nameTh().isBlank()} ? ${hotel.nameTh()} : ${hotel.name}">
+        Hotel
+    </h2>
+    <p class="hotel-meta-row">
+        <span th:text="${currentLang == 'th' and hotel.cityTh() != null and !hotel.cityTh().isBlank()} ? ${hotel.cityTh()} : ${hotel.city}">City</span>
+        <span th:if="${hotel.starRating() != null}" th:text="${hotel.starRating()} + '★'">4★</span>
+        <span th:if="${hotel.guestRating() != null}">
+            <span th:text="#{search.detail.guestRating}">Guest rating</span>
+            <strong th:text="${#numbers.formatDecimal(hotel.guestRating(), 1, 1)}">8.5</strong>
+            <span th:if="${hotel.reviewCount() != null}"
+                  th:text="'(' + ${hotel.reviewCount()} + ' ' + #{search.detail.reviews} + ')'">(120 reviews)</span>
+        </span>
+    </p>
+
+    <p class="hotel-price">
+        <strong th:text="${#numbers.formatDecimal(hotel.pricePerNight(), 1, 0)}">100</strong>
+        <span th:text="#{search.results.perNight}">/ night</span>
+    </p>
+
+    <p th:text="${currentLang == 'th' and hotel.descriptionTh() != null and !hotel.descriptionTh().isBlank()}
+        ? ${hotel.descriptionTh()} : ${hotel.description}">Description</p>
+
+    <dl class="hotel-detail-facts">
+        <div th:if="${(currentLang == 'th' and hotel.addressTh() != null and !hotel.addressTh().isBlank()) or (hotel.address() != null and !hotel.address().isBlank())}">
+            <dt th:text="#{search.detail.address}">Address</dt>
+            <dd th:text="${currentLang == 'th' and hotel.addressTh() != null and !hotel.addressTh().isBlank()} ? ${hotel.addressTh()} : ${hotel.address}">Address</dd>
+        </div>
+        <div th:if="${(currentLang == 'th' and hotel.neighborhoodTh() != null and !hotel.neighborhoodTh().isBlank()) or (hotel.neighborhood() != null and !hotel.neighborhood().isBlank())}">
+            <dt th:text="#{search.detail.neighborhood}">Neighborhood</dt>
+            <dd th:text="${currentLang == 'th' and hotel.neighborhoodTh() != null and !hotel.neighborhoodTh().isBlank()} ? ${hotel.neighborhoodTh()} : ${hotel.neighborhood}">Area</dd>
+        </div>
+        <div th:if="${hotel.checkInFrom() != null}">
+            <dt th:text="#{search.detail.checkIn}">Check-in</dt>
+            <dd th:text="${hotel.checkInFrom()}">14:00</dd>
+        </div>
+        <div th:if="${hotel.checkOutUntil() != null}">
+            <dt th:text="#{search.detail.checkOut}">Check-out</dt>
+            <dd th:text="${hotel.checkOutUntil()}">12:00</dd>
+        </div>
+        <div th:if="${hotel.phone() != null}">
+            <dt th:text="#{search.detail.phone}">Phone</dt>
+            <dd th:text="${hotel.phone()}">+66</dd>
+        </div>
+        <div th:if="${hotel.amenities() != null and !hotel.amenities().isBlank()}">
+            <dt th:text="#{search.detail.amenities}">Amenities</dt>
+            <dd th:text="${hotel.amenities()}">wifi</dd>
+        </div>
+    </dl>
+
+    <div class="hotel-gallery" th:if="${hotel.galleryUrls() != null and !hotel.galleryUrls().isEmpty()}">
+        <h3 th:text="#{search.detail.gallery}">Gallery</h3>
+        <div class="hotel-gallery-grid">
+            <img th:each="url : ${hotel.galleryUrls()}"
+                 th:src="${url}"
+                 alt=""
+                 loading="lazy"
+                 width="400"
+                 height="250">
+        </div>
+    </div>
+</div>
+</body>
+</html>

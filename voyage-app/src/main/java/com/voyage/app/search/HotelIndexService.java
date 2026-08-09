@@ -55,8 +55,7 @@ public class HotelIndexService implements HotelIndexSync {
   }
 
   public ReindexResult reindex() {
-    ensureIndex();
-    hotelSearchRepository.deleteAll();
+    recreateIndex();
     List<Hotel> hotels = hotelRepository.findAll();
     List<HotelDocument> documents = hotels.stream().map(HotelDocument::from).toList();
     if (!documents.isEmpty()) {
@@ -80,6 +79,18 @@ public class HotelIndexService implements HotelIndexSync {
       indexOps.putMapping(HotelDocument.class);
       log.info("Created Elasticsearch index '{}'", indexName);
     }
+  }
+
+  /** Drop and recreate so mapping changes (e.g. search_as_you_type suggest fields) take effect. */
+  private void recreateIndex() {
+    IndexCoordinates coordinates = IndexCoordinates.of(indexName);
+    IndexOperations indexOps = elasticsearchOperations.indexOps(coordinates);
+    if (indexOps.exists()) {
+      indexOps.delete();
+    }
+    indexOps.create();
+    indexOps.putMapping(HotelDocument.class);
+    log.info("Recreated Elasticsearch index '{}'", indexName);
   }
 
   public StatusResult status() {

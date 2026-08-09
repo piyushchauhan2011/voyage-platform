@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 class HotelDocumentTest {
 
   @Test
-  void fromCopiesBilingualFields() {
+  void fromCopiesBilingualAndSuggestFields() {
     Hotel hotel =
         new Hotel(
             "Palm Grove Hotel",
@@ -20,6 +20,9 @@ class HotelDocumentTest {
             "ภูเก็ต",
             "ใกล้ชายหาด");
     hotel.setId(42L);
+    hotel.setImageUrl("https://picsum.photos/seed/palm/800/500");
+    hotel.setStarRating(4);
+    hotel.setGuestRating(8.7);
 
     HotelDocument document = HotelDocument.from(hotel);
 
@@ -30,5 +33,12 @@ class HotelDocumentTest {
     assertThat(document.getCityTh()).isEqualTo("ภูเก็ต");
     assertThat(document.getDescriptionTh()).contains("ชายหาด");
     assertThat(document.getPricePerNight()).isEqualTo(120.0);
+    assertThat(document.getNameSuggest()).isEqualTo("Palm Grove Hotel");
+    assertThat(document.getNameThSuggest()).isEqualTo("โรงแรมดงปาล์ม");
+    assertThat(document.getCitySuggest()).isEqualTo("Phuket");
+    assertThat(document.getCityThSuggest()).isEqualTo("ภูเก็ต");
+    assertThat(document.getImageUrl()).contains("picsum.photos");
+    assertThat(document.getStarRating()).isEqualTo(4);
+    assertThat(document.getGuestRating()).isEqualTo(8.7);
   }
 }

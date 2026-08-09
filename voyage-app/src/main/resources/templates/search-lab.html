@@ -38,8 +38,8 @@
             <ol>
                 <li th:text="#{search.step1}">Login as ADMIN.</li>
                 <li th:text="#{search.step2}">Seed, then Reindex.</li>
-                <li th:text="#{search.step3}">Search beach vs ชายหาด.</li>
-                <li th:text="#{search.step4}">Compare with /ui/ai.</li>
+                <li th:text="#{search.step3}">Try autocomplete, then search.</li>
+                <li th:text="#{search.step4}">Open Details on a card.</li>
             </ol>
         </div>
     </header>
@@ -52,14 +52,25 @@
               class="search-form"
               hx-get="/ui/search/results"
               hx-target="#search-results"
-              hx-trigger="submit, keyup changed delay:350ms from:#search-q, change from:.search-filter"
+              hx-trigger="submit, change from:.search-filter"
               hx-indicator="#search-spinner">
-            <label>
+            <label class="suggest-field">
                 <span th:text="#{search.query.label}">Search</span>
-                <input id="search-q" type="search" name="q"
-                       th:placeholder="#{search.query.placeholder}"
-                       placeholder="beach, ชายหาด…"
-                       autocomplete="off">
+                <div class="suggest-wrap">
+                    <input id="search-q" type="search" name="q"
+                           th:placeholder="#{search.query.placeholder}"
+                           placeholder="beach, ชายหาด…"
+                           autocomplete="off"
+                           role="combobox"
+                           aria-autocomplete="list"
+                           aria-controls="suggest-list"
+                           aria-expanded="false">
+                    <ul id="suggest-list"
+                        class="suggest-list"
+                        role="listbox"
+                        hidden
+                        th:attr="data-empty=#{search.suggest.empty}"></ul>
+                </div>
             </label>
             <label>
                 <span th:text="#{search.city.label}">City</span>
@@ -125,10 +136,22 @@
     </section>
 </div>
 
+<dialog id="hotel-detail-dialog" class="hotel-dialog">
+    <div class="hotel-dialog-chrome">
+        <button type="button" id="hotel-dialog-close" class="secondary" th:text="#{search.detail.close}">Close</button>
+    </div>
+    <div id="hotel-detail-body" class="hotel-dialog-body">
+        <p class="muted" th:text="#{search.detail.loading}">Loading…</p>
+    </div>
+</dialog>
+
 <script th:inline="javascript">
     window.searchLabConfig = {
         loginUrl: /*[[@{/api/v1/auth/login}]]*/ '/api/v1/auth/login',
         playgroundBase: /*[[@{/api/search/playground}]]*/ '/api/search/playground',
+        suggestUrl: /*[[@{/api/v1/search/hotels/suggest}]]*/ '/api/v1/search/hotels/suggest',
+        detailFragmentBase: /*[[@{/ui/search/hotels}]]*/ '/ui/search/hotels',
+        lang: /*[[${currentLang}]]*/ 'en',
         storageKey: 'voyage.search.adminToken'
     };
 </script>

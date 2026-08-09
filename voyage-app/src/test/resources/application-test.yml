@@ -46,6 +46,8 @@ spring:
     properties:
       hibernate:
         format_sql: false
+  flyway:
+    enabled: false
   thymeleaf:
     cache: false
   kafka:
@@ -99,6 +101,12 @@ application:
   observability:
     chaos:
       enabled: true
+  seed:
+    enabled: false
+    on-startup-if-empty: false
+    hotels: 5
+    inventory-days: 7
+    customers: 2
 
 management:
   endpoints:

@@ -98,6 +98,8 @@ public class SecurityConfig {
                     .hasRole("ADMIN")
                     .requestMatchers("/api/observability/**")
                     .hasRole("ADMIN")
+                    .requestMatchers("/api/seed/**")
+                    .hasRole("ADMIN")
                     .requestMatchers(HttpMethod.GET, "/api/v1/users/me")
                     .authenticated()
                     .requestMatchers(HttpMethod.PATCH, "/api/v1/users/me")

@@ -14,9 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Seeds a hotel catalogue rich enough for semantic search to be interesting.
  *
- * <p>The app runs with ddl-auto=create-drop, so the database is empty after every restart. Rather
- * than a startup hook, seeding is an explicit lab step: you press the button, you see what got
- * created, and re-pressing it is safe.
+ * <p>Schema persists across restarts (Flyway + validate). Seeding stays an explicit lab step: you
+ * press the button, you see what got created, and re-pressing it is safe (skips names that already
+ * exist). For a general DataFaker catalogue, use {@code POST /api/seed/demo}.
  *
  * <p>The descriptions are deliberately written so that the obvious query ("near the beach") matches
  * hotels whose name and city never contain the word "beach" — that is the whole point of embedding

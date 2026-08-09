@@ -31,13 +31,16 @@ spring:
 
   jpa:
     hibernate:
-      # create-drop: creates schema on startup, drops on shutdown — good for learning, never in prod
-      # validate: only checks schema matches entities (prod-safe)
-      ddl-auto: create-drop
+      # Flyway owns DDL (db/migration). validate fails fast if entities drift from migrations.
+      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:
         format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
@@ -126,6 +129,12 @@ application:
     history-retention: PT1H
     # When true (and RabbitMQ enabled), booking notifications go through email.send workers
     async-notifications: true
+  seed:
+    enabled: true
+    on-startup-if-empty: true
+    hotels: 20
+    inventory-days: 30
+    customers: 5
 
   ai:
     enabled: true

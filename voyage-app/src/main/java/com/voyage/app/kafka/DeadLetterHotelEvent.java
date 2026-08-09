@@ -7,12 +7,13 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "dead_letter_hotel_events")
@@ -40,8 +41,9 @@ public class DeadLetterHotelEvent {
   @Column(name = "kafka_offset", nullable = false)
   private Long kafkaOffset;
 
-  @Lob
-  @Column(nullable = false)
+  /** Kafka payload as TEXT — avoid {@code @Lob} (maps to OID on Postgres and breaks validate). */
+  @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
+  @Column(nullable = false, columnDefinition = "TEXT")
   private String payload;
 
   @Column(name = "original_event_id")

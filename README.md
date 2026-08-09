@@ -6,7 +6,7 @@ A Maven monorepo for learning backend Java and Spring Boot — structured around
 
 | Module | Stack | Purpose |
 |---|---|---|
-| [`voyage-app`](voyage-app/) | Spring Boot 4.1 · PostgreSQL · JPA · Kafka · RabbitMQ · Elasticsearch · Thymeleaf · Spring AI | Spring fundamentals: IoC, DI, REST, JPA, bean lifecycle, async messaging, search, AI |
+| [`voyage-app`](voyage-app/) | Spring Boot 4.1 · PostgreSQL · Flyway · JPA · Kafka · RabbitMQ · Elasticsearch · Thymeleaf · Spring AI | Spring fundamentals: IoC, DI, REST, JPA, migrations, bean lifecycle, async messaging, search, AI |
 | [`java-mastery`](java-mastery/) | Plain Java 21 | Core Java: OOP, Collections, Streams, JVM internals, Multithreading |
 
 ---
@@ -52,7 +52,23 @@ Combine freely, e.g. `docker compose --profile kafka --profile redis up -d`. Nam
 ./mvnw spring-boot:run -pl voyage-app
 ```
 
-The app connects to the Dockerised Postgres and creates the schema automatically (`ddl-auto=create-drop`).
+The app connects to Dockerised Postgres, runs **Flyway** migrations (`db/migration`), then Hibernate **`ddl-auto=validate`**. When the DB is empty, **DataFaker** seeds `admin` / `manager` / sample hotels (`application.seed.*`).
+
+**One-time cutover** if you previously used `create-drop` on a persistent volume (schema without `flyway_schema_history`):
+
+```bash
+docker compose --profile app down
+docker volume ls | grep postgres   # find voyage-platform_postgres-data (name may vary)
+docker volume rm voyage-platform_postgres-data
+docker compose --profile app up -d
+```
+
+Default lab login after seed: **`admin` / `password123`**. Re-seed or top up hotels:
+
+```bash
+curl -X POST http://localhost:8080/api/seed/demo \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+```
 
 Try the API:
 
@@ -721,8 +737,9 @@ Key differences from docker-compose:
 - `KAFKA_ADVERTISED_LISTENERS` uses in-cluster DNS (`kafka:9092`) instead of `localhost:9092`
 - `voyage-app` has init containers that wait for Postgres and Kafka to be reachable before the Spring Boot process starts
 - `enableServiceLinks: false` on the kafka pod — Kubernetes would otherwise inject `KAFKA_PORT` from the Service, which Confluent Platform misinterprets as a broker config property and crashes
-- `SPRING_JPA_HIBERNATE_DDL_AUTO: create` overrides the local `create-drop` — in k8s a rolling update runs the old pod's shutdown (which drops all tables) after the new pod has already started, so `create` is used instead: it recreates tables fresh on every startup but never drops them on shutdown
-- `strategy: type: Recreate` on the voyage-app Deployment — ensures the old pod is fully terminated before the new pod starts, so both cannot hold the database schema simultaneously
+- `SPRING_JPA_HIBERNATE_DDL_AUTO: validate` with Flyway migrations (`db/migration`) — schema is versioned; Hibernate only checks entities match
+- `APPLICATION_SEED_*` auto-seeds demo data when the DB is empty (DataFaker)
+- `strategy: type: Recreate` on the voyage-app Deployment — ensures the old pod is fully terminated before the new pod starts
 
 #### Teardown
 
@@ -818,6 +835,7 @@ This repo is structured to grow with the learning plan:
 
 - **Phase 1 (now)** — `java-mastery`: OOP, Collections, Streams, JVM, Multithreading
 - **Phase 2–3 (now)** — `voyage-app`: Spring Core, REST, JPA
+- **Flyway + seed** — versioned Postgres schema (`db/migration`), `ddl-auto=validate`, DataFaker demo seed (`/api/seed/demo`)
 - **Phase 4 (complete)** — Spring Security + JWT, ABAC roles (`CUSTOMER` / `HOTEL_MANAGER` / `ADMIN`), hotel SaaS plans, booking rate plans, mock payments
 - **Phase 5 (complete)** — Kafka producer/consumer + Thymeleaf event dashboard for hotel mutations
 - **Phase 6 (in progress)** — Redis-backed hotel caching + Redis playground for Strings, Hashes, Lists, Sets, Sorted Sets, TTL, Pub/Sub, and locks

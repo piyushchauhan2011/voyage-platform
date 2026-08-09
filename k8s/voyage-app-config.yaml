@@ -14,10 +14,12 @@ data:
   KAFKA_GROUP_ID: voyage-hotel-events-ui
   # Lab chaos injectors stay off outside local docker-compose learning
   APPLICATION_OBSERVABILITY_CHAOS_ENABLED: "false"
-  # create-drop is safe for local dev but dangerous in k8s: rolling updates terminate
-  # the old pod AFTER the new one starts, causing the old pod's shutdown to drop tables
-  # that the new pod is already serving. Use update so tables are never dropped on shutdown.
-  SPRING_JPA_HIBERNATE_DDL_AUTO: create
+  # Flyway owns DDL (classpath:db/migration). validate fails if entities drift from migrations.
+  # create-drop is unsafe in k8s: rolling updates can drop tables out from under the new pod.
+  SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+  SPRING_FLYWAY_ENABLED: "true"
+  APPLICATION_SEED_ENABLED: "true"
+  APPLICATION_SEED_ON_STARTUP_IF_EMPTY: "true"
 ---
 apiVersion: v1
 kind: Secret

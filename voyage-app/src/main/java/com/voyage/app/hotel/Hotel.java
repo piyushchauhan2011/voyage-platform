@@ -14,8 +14,9 @@ import lombok.Setter;
 /**
  * JPA Entity — maps this class to the "hotels" table.
  *
- * <p>Hibernate reads @Entity classes and generates DDL (with ddl-auto=create-drop). Lifecycle: NEW
- * → MANAGED (after persist) → DETACHED (after transaction ends) → REMOVED
+ * <p>Hibernate maps this class to the "hotels" table. Schema is owned by Flyway ({@code
+ * db/migration}); {@code ddl-auto=validate} checks entities still match. Lifecycle: NEW → MANAGED
+ * (after persist) → DETACHED (after transaction ends) → REMOVED
  */
 @Entity
 @Table(

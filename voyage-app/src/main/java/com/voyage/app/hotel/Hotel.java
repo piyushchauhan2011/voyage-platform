@@ -61,6 +61,21 @@ public class Hotel {
   private String amenities;
 
   /**
+   * Thai display name for the Elasticsearch search lab. Nullable so existing English-only hotels
+   * remain valid; the Thai analyzer indexes this separately from {@link #name}.
+   */
+  @Column(name = "name_th", length = 255)
+  private String nameTh;
+
+  /** Thai city label — e.g. Bangkok → กรุงเทพ. */
+  @Column(name = "city_th", length = 255)
+  private String cityTh;
+
+  /** Thai free-text description for Thai-language full-text search. */
+  @Column(name = "description_th", length = 2000)
+  private String descriptionTh;
+
+  /**
    * Hotel manager who owns this property (ABAC attribute). Null when created by an admin without
    * assignment.
    */
@@ -86,6 +101,21 @@ public class Hotel {
     this(name, city, pricePerNight);
     this.description = description;
     this.amenities = amenities;
+  }
+
+  public Hotel(
+      String name,
+      String city,
+      Double pricePerNight,
+      String description,
+      String amenities,
+      String nameTh,
+      String cityTh,
+      String descriptionTh) {
+    this(name, city, pricePerNight, description, amenities);
+    this.nameTh = nameTh;
+    this.cityTh = cityTh;
+    this.descriptionTh = descriptionTh;
   }
 
   @JsonProperty("managerId")

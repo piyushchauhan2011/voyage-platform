@@ -1,6 +1,9 @@
 services:
 
+  # Postgres lab / app / SRE scrapes — start with: docker compose --profile postgres up -d
+  # (or --profile app / --profile observability)
   postgres:
+    profiles: ["postgres", "app", "observability"]
     # pgvector image (same PG16 base as postgres:16-alpine, so the existing volume still works)
     # ships the `vector` extension needed by the Phase 8 Spring AI lab
     image: pgvector/pgvector:pg16
@@ -19,7 +22,9 @@ services:
       timeout: 5s
       retries: 5
 
+  # Redis lab / app / SRE — start with: docker compose --profile redis up -d
   redis:
+    profiles: ["redis", "app", "observability"]
     image: redis:7-alpine
     container_name: voyage-redis
     # Cap memory so the Redis eviction chaos lab can force allkeys-lru evictions
@@ -34,7 +39,9 @@ services:
       timeout: 5s
       retries: 5
 
+  # Kafka lab / app / SRE — start with: docker compose --profile kafka up -d
   zookeeper:
+    profiles: ["kafka", "app", "observability"]
     image: confluentinc/cp-zookeeper:7.6.0
     container_name: voyage-zookeeper
     environment:
@@ -44,6 +51,7 @@ services:
       - "2181:2181"
 
   kafka:
+    profiles: ["kafka", "app", "observability"]
     image: confluentinc/cp-kafka:7.6.0
     container_name: voyage-kafka
     depends_on:
@@ -61,7 +69,9 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
 
+  # RabbitMQ lab / app — start with: docker compose --profile rabbitmq up -d
   rabbitmq:
+    profiles: ["rabbitmq", "app"]
     image: rabbitmq:3.13-management
     container_name: voyage-rabbitmq
     ports:
@@ -79,7 +89,9 @@ services:
       timeout: 5s
       retries: 5
 
+  # Included in postgres + app profiles (not observability)
   pgadmin:
+    profiles: ["postgres", "app"]
     image: dpage/pgadmin4:latest
     container_name: voyage-pgadmin
     depends_on:
@@ -93,7 +105,10 @@ services:
     volumes:
       - pgadmin-data:/var/lib/pgadmin
 
+  # SRE lab — start with: docker compose --profile observability up -d
+  # (also starts postgres/redis/kafka backends via shared profiles)
   redis-exporter:
+    profiles: ["observability"]
     image: oliver006/redis_exporter:v1.66.0
     container_name: voyage-redis-exporter
     depends_on:
@@ -105,6 +120,7 @@ services:
       - "9121:9121"
 
   postgres-exporter:
+    profiles: ["observability"]
     image: prometheuscommunity/postgres-exporter:v0.15.0
     container_name: voyage-postgres-exporter
     depends_on:
@@ -116,6 +132,7 @@ services:
       - "9187:9187"
 
   kafka-exporter:
+    profiles: ["observability"]
     image: danielqsj/kafka-exporter:v1.7.0
     container_name: voyage-kafka-exporter
     depends_on:
@@ -126,6 +143,7 @@ services:
       - "9308:9308"
 
   prometheus:
+    profiles: ["observability"]
     image: prom/prometheus:v2.54.1
     container_name: voyage-prometheus
     depends_on:
@@ -146,6 +164,7 @@ services:
       - prometheus-data:/prometheus
 
   grafana:
+    profiles: ["observability"]
     image: grafana/grafana:11.2.0
     container_name: voyage-grafana
     depends_on:
@@ -161,6 +180,30 @@ services:
       - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana-data:/var/lib/grafana
+
+  # Elasticsearch hotel search lab — start with: docker compose --profile elasticsearch up -d
+  # (also included in --profile app)
+  # Image major must match spring-boot-starter-data-elasticsearch's Java client (9.x on Boot 4.1)
+  elasticsearch:
+    profiles: ["elasticsearch", "app"]
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.1.5
+    container_name: voyage-elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      xpack.security.http.ssl.enabled: "false"
+      xpack.security.enrollment.enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      cluster.name: voyage-lab
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -qE '\"status\":\"(green|yellow)\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
 
   # Opt-in local CI lab — start with: docker compose --profile jenkins up -d jenkins
   jenkins:
@@ -184,6 +227,7 @@ volumes:
   redis-data:
   pgadmin-data:
   rabbitmq-data:
+  elasticsearch-data:
   prometheus-data:
   grafana-data:
   jenkins-data:

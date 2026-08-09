@@ -5,7 +5,7 @@ Local Prometheus + Grafana stack for learning the six SRE failure modes against 
 ## Start
 
 ```bash
-docker compose up -d
+docker compose --profile observability up -d
 ./mvnw spring-boot:run -pl voyage-app
 ```
 

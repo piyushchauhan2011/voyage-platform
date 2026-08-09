@@ -6,7 +6,7 @@ Contrast with Kafka hotel event streaming at `/ui/kafka` and [`03_kafka_vs_rabbi
 
 ## Prerequisites
 
-1. Start RabbitMQ (and the rest of infra): `docker compose up -d`
+1. Start RabbitMQ (and the rest of infra): `docker compose --profile app up -d` (or `--profile rabbitmq` alone)
 2. Start the app: `./mvnw spring-boot:run -pl voyage-app`
 3. Optional: open the broker UI at http://localhost:15672 (`guest` / `guest`)
 

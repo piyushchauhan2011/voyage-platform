@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{search.title}">Hotel search</title>
+    <link rel="stylesheet" th:href="@{/css/booking-workbench.css}">
+    <link rel="stylesheet" th:href="@{/css/search-lab.css}">
+    <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+</head>
+<body>
+<div class="workbench-shell search-shell">
+    <header class="hero-band">
+        <div>
+            <p class="eyebrow" th:text="#{search.eyebrow}">Elasticsearch lab</p>
+            <h1 th:text="#{search.hero}">Find hotels with full-text search</h1>
+            <p class="hero-copy" th:text="#{search.hero.copy}">
+                Postgres stores the hotels. Elasticsearch ranks them.
+            </p>
+            <div class="locale-row" aria-label="Language">
+                <a class="locale-link"
+                   th:classappend="${#locale.language == 'en'} ? ' is-active'"
+                   th:href="@{/ui/search(lang='en')}"
+                   th:text="#{search.lang.en}">English</a>
+                <a class="locale-link"
+                   th:classappend="${#strings.startsWith(#locale.language, 'th')} ? ' is-active'"
+                   th:href="@{/ui/search(lang='th')}"
+                   th:text="#{search.lang.th}">ไทย</a>
+            </div>
+            <p class="compare-links">
+                <a class="inline-link" th:href="@{/api/v1/hotels}" th:text="#{search.compare.jpa}">JPA browse</a>
+                ·
+                <a class="inline-link" th:href="@{/ui/ai}" th:text="#{search.compare.ai}">AI semantic search</a>
+            </p>
+        </div>
+        <div class="hero-card">
+            <h2 th:text="#{search.suggested}">Suggested path</h2>
+            <ol>
+                <li th:text="#{search.step1}">Login as ADMIN.</li>
+                <li th:text="#{search.step2}">Seed, then Reindex.</li>
+                <li th:text="#{search.step3}">Search beach vs ชายหาด.</li>
+                <li th:text="#{search.step4}">Compare with /ui/ai.</li>
+            </ol>
+        </div>
+    </header>
+
+    <section class="panel search-panel">
+        <div class="panel-heading">
+            <h2 th:text="#{search.query.label}">Search</h2>
+        </div>
+        <form id="hotel-search-form"
+              class="search-form"
+              hx-get="/ui/search/results"
+              hx-target="#search-results"
+              hx-trigger="submit, keyup changed delay:350ms from:#search-q, change from:.search-filter"
+              hx-indicator="#search-spinner">
+            <label>
+                <span th:text="#{search.query.label}">Search</span>
+                <input id="search-q" type="search" name="q"
+                       th:placeholder="#{search.query.placeholder}"
+                       placeholder="beach, ชายหาด…"
+                       autocomplete="off">
+            </label>
+            <label>
+                <span th:text="#{search.city.label}">City</span>
+                <input class="search-filter" type="text" name="city"
+                       th:placeholder="#{search.city.placeholder}">
+            </label>
+            <label>
+                <span th:text="#{search.minPrice.label}">Min price</span>
+                <input class="search-filter" type="number" name="minPrice" min="0" step="1">
+            </label>
+            <label>
+                <span th:text="#{search.maxPrice.label}">Max price</span>
+                <input class="search-filter" type="number" name="maxPrice" min="0" step="1">
+            </label>
+            <button type="submit" th:text="#{search.submit}">Search</button>
+            <span id="search-spinner" class="htmx-indicator search-spinner" aria-hidden="true">…</span>
+        </form>
+    </section>
+
+    <section class="panel results-panel">
+        <div class="panel-heading">
+            <h2 th:text="#{search.results.heading}">Results</h2>
+        </div>
+        <div id="search-results"
+             hx-get="/ui/search/results"
+             hx-trigger="load"
+             hx-indicator="#search-spinner">
+            <p class="muted" th:text="#{search.results.empty}">Loading…</p>
+        </div>
+    </section>
+
+    <section class="panel auth-panel">
+        <div class="panel-heading">
+            <h2 th:text="#{search.admin.heading}">Admin playground</h2>
+            <p th:text="#{search.admin.copy}">Admin JWT required.</p>
+        </div>
+        <form id="login-form" class="stack-form">
+            <label>
+                <span th:text="#{search.admin.username}">Username</span>
+                <input type="text" name="username" autocomplete="username" placeholder="admin">
+            </label>
+            <label>
+                <span th:text="#{search.admin.password}">Password</span>
+                <input type="password" name="password" autocomplete="current-password" placeholder="password123">
+            </label>
+            <button type="submit" th:text="#{search.admin.login}">Login</button>
+        </form>
+        <label class="token-block">
+            <span th:text="#{search.admin.token}">Active access token</span>
+            <textarea id="token-input" rows="3" placeholder="Bearer …"></textarea>
+        </label>
+        <div id="auth-feedback" class="feedback" aria-live="polite"></div>
+        <div class="button-row">
+            <button type="button" id="status-btn" class="secondary" th:text="#{search.admin.status}">Status</button>
+            <button type="button" id="seed-btn" class="secondary" th:text="#{search.admin.seed}">Seed</button>
+            <button type="button" id="reindex-btn" th:text="#{search.admin.reindex}">Reindex</button>
+            <button type="button" id="explain-btn" class="secondary" th:text="#{search.admin.explain}">Explain</button>
+        </div>
+        <div class="panel-heading">
+            <h3 th:text="#{search.admin.output}">Lab output</h3>
+        </div>
+        <pre id="lab-output" class="lab-output" aria-live="polite"></pre>
+    </section>
+</div>
+
+<script th:inline="javascript">
+    window.searchLabConfig = {
+        loginUrl: /*[[@{/api/v1/auth/login}]]*/ '/api/v1/auth/login',
+        playgroundBase: /*[[@{/api/search/playground}]]*/ '/api/search/playground',
+        storageKey: 'voyage.search.adminToken'
+    };
+</script>
+<script th:src="@{/js/search-lab.js}"></script>
+</body>
+</html>

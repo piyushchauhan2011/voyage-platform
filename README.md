@@ -6,7 +6,7 @@ A Maven monorepo for learning backend Java and Spring Boot — structured around
 
 | Module | Stack | Purpose |
 |---|---|---|
-| [`voyage-app`](voyage-app/) | Spring Boot 4.1 · PostgreSQL · JPA · Kafka · RabbitMQ · Thymeleaf · Spring AI | Spring fundamentals: IoC, DI, REST, JPA, bean lifecycle, async messaging, AI |
+| [`voyage-app`](voyage-app/) | Spring Boot 4.1 · PostgreSQL · JPA · Kafka · RabbitMQ · Elasticsearch · Thymeleaf · Spring AI | Spring fundamentals: IoC, DI, REST, JPA, bean lifecycle, async messaging, search, AI |
 | [`java-mastery`](java-mastery/) | Plain Java 21 | Core Java: OOP, Collections, Streams, JVM internals, Multithreading |
 
 ---
@@ -15,9 +15,24 @@ A Maven monorepo for learning backend Java and Spring Boot — structured around
 
 ### 1. Start the infrastructure
 
+All Compose services are **opt-in via profiles** (nothing starts on a bare `docker compose up`). For day-to-day `voyage-app` work:
+
 ```bash
-docker compose up -d
+docker compose --profile app up -d
 ```
+
+| Profile | What it starts | Use when |
+|---|---|---|
+| `app` | Postgres, pgAdmin, Redis, Kafka, Zookeeper, RabbitMQ, Elasticsearch | Running the Spring app |
+| `postgres` | Postgres + pgAdmin | Postgres / JPA / SQL labs |
+| `redis` | Redis | Cache / eviction labs |
+| `kafka` | Zookeeper + Kafka | Kafka learning |
+| `rabbitmq` | RabbitMQ | RabbitMQ lab |
+| `elasticsearch` | Elasticsearch | Hotel full-text search lab |
+| `observability` | Postgres, Redis, Kafka + exporters, Prometheus, Grafana | SRE / Grafana lab |
+| `jenkins` | Jenkins | Local CI lab (§4c) |
+
+Combine freely, e.g. `docker compose --profile kafka --profile redis up -d`. Naming a service also enables its profile: `docker compose up -d postgres`.
 
 | Service | URL / Port | Credentials |
 |---|---|---|
@@ -26,9 +41,10 @@ docker compose up -d
 | Redis | `localhost:6379` | `maxmemory 64mb`, `allkeys-lru` (eviction lab) |
 | Kafka | `localhost:9092` | — |
 | RabbitMQ | `localhost:5672` (AMQP) · http://localhost:15672 (UI) | `guest / guest` |
-| Prometheus | http://localhost:9090 | scrapes app + exporters |
+| Elasticsearch | http://localhost:9200 | security disabled (local lab) |
+| Prometheus | http://localhost:9090 | scrapes app + exporters (`--profile observability`) |
 | Grafana | http://localhost:3000 | `admin / admin` — dashboard **Voyage SRE Lab** |
-| Jenkins (opt-in profile) | http://localhost:8081 | unlock with initial admin password (see §4c) |
+| Jenkins | http://localhost:8081 | unlock with initial admin password (see §4c) |
 
 ### 2. Run the Spring Boot app
 
@@ -60,6 +76,9 @@ curl http://localhost:8080/actuator/prometheus | head
 
 # Kafka dashboard
 open http://localhost:8080/ui/kafka
+
+# Elasticsearch hotel search (Thai/English)
+open http://localhost:8080/ui/search
 
 # Grafana SRE lab (CPU / memory / latency / deadlock / Kafka lag / Redis eviction)
 open http://localhost:3000
@@ -280,7 +299,7 @@ Hands-on AMQP for **Exchange**, **Queue**, **Routing Key**, and **Consumer** —
 
 Suggested learning path:
 
-1. `docker compose up -d` (includes RabbitMQ), start the app, open http://localhost:8080/ui/rabbitmq, login as ADMIN.
+1. `docker compose --profile app up -d` (or `--profile rabbitmq` alone), start the app, open http://localhost:8080/ui/rabbitmq, login as ADMIN.
 2. **Setup topology** — direct exchange `voyage.jobs` bound to booking/email queues.
 3. Publish `booking.confirm` or `email.send`, then **Refresh consumed** to see the consumer delivery.
 4. Run **Routing demo** (matched key vs unbound `unknown.job`).
@@ -697,7 +716,7 @@ Get a free key from [Google AI Studio](https://aistudio.google.com/apikey), add 
 
 ```bash
 set -a && . ./.env && set +a     # Spring Boot does not read .env by itself
-docker compose up -d
+docker compose --profile app up -d
 ./mvnw spring-boot:run -pl voyage-app
 open http://localhost:8080/ui/ai
 ```
@@ -731,6 +750,26 @@ Full walkthrough, curl examples, and Gemini-specific gotchas: [`ai-lab/README.md
 
 ---
 
+### Phase 9 — Elasticsearch hotel search + Thai i18n
+
+Full-text hotel search with Spring Data Elasticsearch. **Postgres stays the source of truth**; Elasticsearch is a derived index with English + Thai analyzers. The UI at `/ui/search` uses Thymeleaf, HTMX result fragments, and `messages` / `messages_th` locale switching.
+
+```bash
+docker compose --profile elasticsearch up -d   # or --profile app
+./mvnw spring-boot:run -pl voyage-app
+open http://localhost:8080/ui/search
+# Toggle ไทย, Seed + Reindex as ADMIN, then search beach vs ชายหาด
+```
+
+Contrast with:
+
+- JPA filters: `GET /api/v1/hotels?city=Bangkok`
+- Semantic search: [`/ui/ai`](http://localhost:8080/ui/ai) (pgvector)
+
+Lab notes and sample curls: [`search-lab/README.md`](search-lab/README.md). Helper: `bash api_manual_checks/seed_search_lab.sh`.
+
+---
+
 ## Roadmap coverage
 
 This repo is structured to grow with the learning plan:
@@ -742,3 +781,4 @@ This repo is structured to grow with the learning plan:
 - **Phase 6 (in progress)** — Redis-backed hotel caching + Redis playground for Strings, Hashes, Lists, Sets, Sorted Sets, TTL, Pub/Sub, and locks
 - **Phase 7 (complete)** — `voyage-app/Dockerfile` (multi-stage) + full Kubernetes deployment in `k8s/`
 - **Phase 8 (complete)** — Spring AI hotel assistant: Gemini chat, embeddings, pgvector, RAG, tool calling, and an agent at `/ui/ai`
+- **Phase 9 (complete)** — Elasticsearch hotel search with Thai/English analyzers, HTMX UI, and i18n at `/ui/search`

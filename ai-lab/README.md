@@ -21,7 +21,7 @@ Neither mechanism can do the other's job. Similarity search cannot compare numbe
 
 ```bash
 set -a && . ./.env && set +a     # see the note below — this step is easy to miss
-docker compose up -d
+docker compose --profile app up -d
 ./mvnw spring-boot:run -pl voyage-app
 ```
 

@@ -11,6 +11,7 @@ There is now a separate Redis verification script focused on cache population, T
 There is now a Postgres lab seed script (`seed_postgres_lab.sh`) that seeds volume data and runs an `EXPLAIN` via `/api/postgres/playground` (see also `postgres-lab/` SQL scripts and `/ui/postgres`).
 There is now a RabbitMQ lab seed script (`seed_rabbitmq_lab.sh`) that sets up topology, publishes a job, and waits for a consumer delivery via `/api/rabbitmq/playground` (see also `rabbitmq-lab/` and `/ui/rabbitmq`).
 There is now a Spring AI lab seed script (`seed_ai_lab.sh`) that seeds the hotel catalog, embeds it into pgvector, and walks similarity search, RAG, and the tool-calling agent via `/api/ai/playground` (see also `ai-lab/` and `/ui/ai`). It needs a `GEMINI_API_KEY` exported into the shell that runs the app.
+There is now an Elasticsearch search lab seed script (`seed_search_lab.sh`) that seeds bilingual hotels, reindexes Elasticsearch, and searches `beach` / `ชายหาด` (see also `search-lab/` and `/ui/search`).
 
 ## Prerequisites
 
@@ -24,7 +25,7 @@ There is now a Spring AI lab seed script (`seed_ai_lab.sh`) that seeds the hotel
 From the repo root:
 
 ```bash
-docker compose up -d
+docker compose --profile app up -d
 ./mvnw spring-boot:run -pl voyage-app
 ```
 
@@ -448,4 +449,4 @@ If admin write calls still return `403`, log in again after promoting the user. 
 
 If refresh returns `401` before logout, confirm you are using the refresh token value, not the access token.
 
-If the Kafka status feed stays empty after an admin hotel write, confirm Kafka is running from `docker compose up -d` and check `GET /ui/kafka/status` directly. The app only records events after the Kafka consumer receives them.
+If the Kafka status feed stays empty after an admin hotel write, confirm Kafka is running (`docker compose --profile kafka up -d` or `--profile app`) and check `GET /ui/kafka/status` directly. The app only records events after the Kafka consumer receives them.

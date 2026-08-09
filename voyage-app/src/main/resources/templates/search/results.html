@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="results">
+    <div th:if="${searchDisabled}" class="feedback error" th:text="#{search.disabled}">
+        Search disabled
+    </div>
+
+    <div th:if="${!searchDisabled and searchPage != null}">
+        <p class="results-meta"
+           th:text="#{search.results.total(${searchPage.totalElements()})}">0 hotels found</p>
+
+        <p th:if="${searchPage.content().isEmpty()}"
+           class="muted"
+           th:text="#{search.results.empty}">No hotels matched.</p>
+
+        <ul class="hotel-result-list" th:if="${!searchPage.content().isEmpty()}">
+            <li class="hotel-result-card" th:each="hit : ${searchPage.content()}">
+                <div class="hotel-result-top">
+                    <h3 th:text="${currentLang == 'th' and hit.nameTh() != null and !hit.nameTh().isBlank()} ? ${hit.nameTh()} : ${hit.name}">
+                        Hotel name
+                    </h3>
+                    <span class="score-pill"
+                          th:text="#{search.results.score} + ' ' + ${#numbers.formatDecimal(hit.score(), 1, 2)}">
+                        score 1.0
+                    </span>
+                </div>
+                <p class="hotel-city"
+                   th:text="${currentLang == 'th' and hit.cityTh() != null and !hit.cityTh().isBlank()} ? ${hit.cityTh()} : ${hit.city}">
+                    City
+                </p>
+                <p class="hotel-price">
+                    <strong th:text="${#numbers.formatDecimal(hit.pricePerNight(), 1, 0)}">100</strong>
+                    <span th:text="#{search.results.perNight}">/ night</span>
+                </p>
+                <p class="hotel-description"
+                   th:text="${currentLang == 'th' and hit.descriptionTh() != null and !hit.descriptionTh().isBlank()}
+                       ? ${hit.descriptionTh()}
+                       : ${hit.description}">
+                    Description
+                </p>
+                <ul class="highlight-list" th:if="${hit.highlights() != null and !hit.highlights().isEmpty()}">
+                    <li th:each="snippet : ${hit.highlights()}" th:utext="${snippet}">match</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</div>
+</body>
+</html>

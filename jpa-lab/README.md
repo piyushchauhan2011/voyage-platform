@@ -16,7 +16,7 @@ COMMIT
 
 ## Prerequisites
 
-1. Start Postgres: `docker compose up -d postgres`
+1. Start Postgres: `docker compose --profile postgres up -d` (or `docker compose up -d postgres`)
 2. Run the app: `./mvnw spring-boot:run -pl voyage-app`
 3. Open http://localhost:8080/ui/jpa and login as an ADMIN user
 

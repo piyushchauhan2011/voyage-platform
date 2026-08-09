@@ -10,6 +10,15 @@ spring:
       repositories:
         enabled: false
 
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URIS:http://localhost:9200}
+    connection-timeout: 2s
+    socket-timeout: 10s
+
+  messages:
+    basename: messages
+    encoding: UTF-8
+
   thymeleaf:
     cache: false
 
@@ -113,6 +122,9 @@ application:
     # how many hotel documents the retriever pulls back for RAG
     top-k: 4
     similarity-threshold: 0.5
+  search:
+    enabled: true
+    index: hotels
   security:
     jwt:
       # dev-only key — replace with a securely generated secret in production

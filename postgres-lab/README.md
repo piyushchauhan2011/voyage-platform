@@ -4,7 +4,7 @@ Hands-on SQL for indexes, the query planner, partitioning, locks, and isolation 
 
 ## Prerequisites
 
-1. Start Postgres: `docker compose up -d postgres`
+1. Start Postgres: `docker compose --profile postgres up -d` (or `docker compose up -d postgres`)
 2. Start the app once so Hibernate creates the core schema: `./mvnw spring-boot:run -pl voyage-app`
 3. Leave the app running, or keep the DB volume so tables remain after you stop it (`create-drop` drops schema on shutdown — re-run the app before seeding if needed)
 

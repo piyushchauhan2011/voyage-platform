@@ -90,6 +90,8 @@ public class SecurityConfig {
                     .hasRole("ADMIN")
                     .requestMatchers("/api/ai/**")
                     .hasRole("ADMIN")
+                    .requestMatchers("/api/search/**")
+                    .hasRole("ADMIN")
                     .requestMatchers("/api/observability/**")
                     .hasRole("ADMIN")
                     .requestMatchers(HttpMethod.GET, "/api/v1/users/me")
@@ -110,7 +112,9 @@ public class SecurityConfig {
                     .authenticated()
                     .requestMatchers("/api/v1/notifications/**")
                     .authenticated()
-                    // Hotel reads are public — no account required to browse
+                    // Hotel reads + Elasticsearch search are public — no account required to browse
+                    .requestMatchers(HttpMethod.GET, "/api/v1/search/**")
+                    .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/hotels/**")
                     .permitAll()
                     // Management patch is admin-only; other writes allow managers (ABAC in service)

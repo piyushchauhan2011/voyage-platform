@@ -4,6 +4,7 @@ import com.voyage.app.exception.ForbiddenException;
 import com.voyage.app.exception.ResourceNotFoundException;
 import com.voyage.app.kafka.HotelEventPublisher;
 import com.voyage.app.kafka.HotelEventType;
+import com.voyage.app.search.HotelIndexSync;
 import com.voyage.app.security.HotelAccessService;
 import com.voyage.app.user.Role;
 import com.voyage.app.user.User;
@@ -32,16 +33,20 @@ public class HotelService {
 
   private final HotelRepository hotelRepository;
   private final HotelEventPublisher hotelEventPublisher;
+  private final ObjectProvider<HotelIndexSync> hotelIndexSyncProvider;
   private final HotelAccessService hotelAccessService;
   private final UserRepository userRepository;
 
   public HotelService(
       HotelRepository hotelRepository,
       ObjectProvider<HotelEventPublisher> hotelEventPublisherProvider,
+      ObjectProvider<HotelIndexSync> hotelIndexSyncProvider,
       HotelAccessService hotelAccessService,
       UserRepository userRepository) {
     this.hotelRepository = hotelRepository;
     this.hotelEventPublisher = hotelEventPublisherProvider.getIfAvailable();
+    // Resolve lazily on write — do not force Elasticsearch beans during HotelService construction
+    this.hotelIndexSyncProvider = hotelIndexSyncProvider;
     this.hotelAccessService = hotelAccessService;
     this.userRepository = userRepository;
   }
@@ -95,6 +100,7 @@ public class HotelService {
 
     Hotel savedHotel = hotelRepository.save(hotel);
     publishEvent(HotelEventType.CREATED, savedHotel);
+    indexUpsert(savedHotel);
     return savedHotel;
   }
 
@@ -110,9 +116,13 @@ public class HotelService {
     hotel.setPricePerNight(updates.getPricePerNight());
     hotel.setDescription(updates.getDescription());
     hotel.setAmenities(updates.getAmenities());
+    hotel.setNameTh(updates.getNameTh());
+    hotel.setCityTh(updates.getCityTh());
+    hotel.setDescriptionTh(updates.getDescriptionTh());
     // manager + saasPlan only change via updateManagement
     Hotel updatedHotel = hotelRepository.save(hotel);
     publishEvent(HotelEventType.UPDATED, updatedHotel);
+    indexUpsert(updatedHotel);
     return updatedHotel;
   }
 
@@ -156,11 +166,26 @@ public class HotelService {
     Hotel hotel = findById(id);
     hotelRepository.deleteById(id);
     publishEvent(HotelEventType.DELETED, hotel);
+    indexDelete(id);
   }
 
   private void publishEvent(HotelEventType eventType, Hotel hotel) {
     if (hotelEventPublisher != null) {
       hotelEventPublisher.publish(eventType, hotel);
+    }
+  }
+
+  private void indexUpsert(Hotel hotel) {
+    HotelIndexSync hotelIndexSync = hotelIndexSyncProvider.getIfAvailable();
+    if (hotelIndexSync != null) {
+      hotelIndexSync.upsert(hotel);
+    }
+  }
+
+  private void indexDelete(Long id) {
+    HotelIndexSync hotelIndexSync = hotelIndexSyncProvider.getIfAvailable();
+    if (hotelIndexSync != null) {
+      hotelIndexSync.delete(id);
     }
   }
 }

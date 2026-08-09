@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voyage Jobs Lab</title>
+    <link rel="stylesheet" th:href="@{/css/booking-workbench.css}">
+    <link rel="stylesheet" th:href="@{/css/jobs-lab.css}">
+    <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+</head>
+<body>
+<div class="workbench-shell jobs-shell">
+    <header class="hero-band">
+        <div>
+            <p class="eyebrow">Jobs lab</p>
+            <h1>Scheduler, queues, and delayed jobs</h1>
+            <p class="hero-copy">
+                Laravel-style background work inside voyage-app:
+                Redis holds delayed jobs (ZSET), <code>@Scheduled</code> moves due work to RabbitMQ,
+                and workers write notifications / job history.
+                Compare routing on
+                <a class="inline-link" th:href="@{/ui/rabbitmq}">/ui/rabbitmq</a>
+                and booking flow on
+                <a class="inline-link" th:href="@{/ui/bookings}">/ui/bookings</a>.
+            </p>
+        </div>
+        <div class="hero-card">
+            <h2>Suggested path</h2>
+            <ol>
+                <li>Login as ADMIN (JWT for actions).</li>
+                <li>Enqueue an immediate <code>email.send</code> job.</li>
+                <li>Enqueue a delayed job (5s) and watch the Redis panel.</li>
+                <li>Refresh runs after the poller publishes to RabbitMQ.</li>
+                <li>Create a booking — notification arrives via the worker when async is on.</li>
+            </ol>
+        </div>
+    </header>
+
+    <main class="workbench-grid jobs-grid">
+        <section class="panel auth-panel">
+            <div class="panel-heading">
+                <h2>Auth helper</h2>
+                <p>Admin JWT required for enqueue / purge actions.</p>
+            </div>
+            <form id="login-form" class="stack-form">
+                <label>Username<input type="text" name="username" autocomplete="username" placeholder="admin"></label>
+                <label>Password<input type="password" name="password" autocomplete="current-password" placeholder="password123"></label>
+                <button type="submit">Login</button>
+            </form>
+            <label class="token-block">
+                Active access token
+                <textarea id="token-input" rows="4" placeholder="Paste a Bearer token here."></textarea>
+            </label>
+            <div id="auth-feedback" class="feedback" aria-live="polite"></div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <h2>Enqueue jobs</h2>
+                <p>Immediate → RabbitMQ now. Delayed → Redis ZSET until due.</p>
+            </div>
+            <form class="stack-form"
+                  hx-post="/ui/jobs/actions/enqueue-immediate"
+                  hx-target="#runs-panel"
+                  hx-swap="innerHTML"
+                  hx-on::after-request="htmx.trigger('#scheduler-panel','refresh')">
+                <label>Routing key
+                    <select name="routingKey">
+                        <option value="email.send">email.send</option>
+                        <option value="booking.confirm">booking.confirm</option>
+                    </select>
+                </label>
+                <label>Payload
+                    <input type="text" name="payload" value="hello-from-jobs-lab" placeholder="job payload">
+                </label>
+                <button type="submit">Enqueue immediate</button>
+            </form>
+            <form class="stack-form delay-form"
+                  hx-post="/ui/jobs/actions/enqueue-delayed"
+                  hx-target="#delayed-panel"
+                  hx-swap="innerHTML"
+                  hx-on::after-request="htmx.trigger('#scheduler-panel','refresh')">
+                <label>Routing key
+                    <select name="routingKey">
+                        <option value="email.send">email.send</option>
+                        <option value="booking.confirm">booking.confirm</option>
+                    </select>
+                </label>
+                <label>Payload
+                    <input type="text" name="payload" value="delayed-lab-job" placeholder="job payload">
+                </label>
+                <label>Delay (seconds)
+                    <input type="number" name="delaySeconds" value="5" min="0" max="3600">
+                </label>
+                <div class="button-row">
+                    <button type="submit">Enqueue delayed</button>
+                    <button type="button"
+                            class="secondary"
+                            hx-post="/ui/jobs/actions/purge-delayed"
+                            hx-target="#delayed-panel"
+                            hx-swap="innerHTML"
+                            hx-on::after-request="htmx.trigger('#scheduler-panel','refresh')">
+                        Purge delayed
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading row-between">
+                <div>
+                    <h2>Scheduler</h2>
+                    <p>Poller + cron heartbeats.</p>
+                </div>
+                <button type="button"
+                        class="secondary"
+                        hx-get="/ui/jobs/fragments/scheduler"
+                        hx-target="#scheduler-panel"
+                        hx-swap="innerHTML">
+                    Refresh
+                </button>
+            </div>
+            <div id="scheduler-panel"
+                 hx-get="/ui/jobs/fragments/scheduler"
+                 hx-trigger="every 2s, refresh"
+                 hx-swap="innerHTML">
+                <div th:replace="~{jobs/scheduler :: scheduler}"></div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading row-between">
+                <div>
+                    <h2>Delayed (Redis ZSET)</h2>
+                    <p>Score = execute-at epoch ms.</p>
+                </div>
+                <button type="button"
+                        class="secondary"
+                        hx-get="/ui/jobs/fragments/delayed"
+                        hx-target="#delayed-panel"
+                        hx-swap="innerHTML">
+                    Refresh
+                </button>
+            </div>
+            <div id="delayed-panel"
+                 hx-get="/ui/jobs/fragments/delayed"
+                 hx-trigger="every 2s"
+                 hx-swap="innerHTML">
+                <div th:replace="~{jobs/delayed :: delayed}"></div>
+            </div>
+        </section>
+
+        <section class="panel runs-panel">
+            <div class="panel-heading row-between">
+                <div>
+                    <h2>Job runs</h2>
+                    <p>Worker history (DB).</p>
+                </div>
+                <button type="button"
+                        class="secondary"
+                        hx-get="/ui/jobs/fragments/runs"
+                        hx-target="#runs-panel"
+                        hx-swap="innerHTML">
+                    Refresh
+                </button>
+            </div>
+            <div id="runs-panel"
+                 hx-get="/ui/jobs/fragments/runs"
+                 hx-trigger="every 2s"
+                 hx-swap="innerHTML">
+                <div th:replace="~{jobs/runs :: runs}"></div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script th:inline="javascript">
+    window.jobsLabConfig = {
+        loginUrl: /*[[@{/api/v1/auth/login}]]*/ '/api/v1/auth/login',
+        storageKey: 'voyage.jobs.lab.token'
+    };
+</script>
+<script th:src="@{/js/jobs-lab.js}" defer></script>
+</body>
+</html>

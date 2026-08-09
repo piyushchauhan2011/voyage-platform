@@ -117,6 +117,16 @@ application:
       ttl:
         hotel-by-id: PT10M
         hotels-by-city: PT5M
+  jobs:
+    # Laravel-like scheduler + delayed queue lab (/ui/jobs)
+    enabled: true
+    delayed-key: voyage:delayed-jobs
+    poll-interval-ms: 1000
+    cleanup-cron: "0 * * * * *"
+    history-retention: PT1H
+    # When true (and RabbitMQ enabled), booking notifications go through email.send workers
+    async-notifications: true
+
   ai:
     enabled: true
     # how many hotel documents the retriever pulls back for RAG

@@ -1,0 +1,22 @@
+<div th:fragment="delayed">
+    <p th:if="${jobsDisabled}" class="muted">Jobs lab is disabled.</p>
+    <p th:if="${!jobsDisabled and #lists.isEmpty(delayedJobs)}" class="muted">No delayed jobs waiting.</p>
+    <table th:if="${!jobsDisabled and !#lists.isEmpty(delayedJobs)}" class="jobs-table">
+        <thead>
+        <tr>
+            <th>Job id</th>
+            <th>Routing key</th>
+            <th>Payload</th>
+            <th>Execute at</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="job : ${delayedJobs}">
+            <td th:text="${#strings.abbreviate(job.jobId(), 12)}">id</td>
+            <td><code th:text="${job.routingKey()}">email.send</code></td>
+            <td th:text="${#strings.abbreviate(job.payload(), 40)}">payload</td>
+            <td th:text="${job.executeAt()}">time</td>
+        </tr>
+        </tbody>
+    </table>
+</div>

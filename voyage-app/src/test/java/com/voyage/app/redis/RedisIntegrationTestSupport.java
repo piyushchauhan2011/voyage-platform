@@ -8,7 +8,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers(disabledWithoutDocker = true)
-abstract class RedisIntegrationTestSupport {
+public abstract class RedisIntegrationTestSupport {
 
   @Container
   static final GenericContainer<?> REDIS =

@@ -1,5 +1,6 @@
 package com.voyage.app.rabbitmq;
 
+import com.voyage.app.jobs.DomainJobHandler;
 import java.time.Instant;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.support.AmqpHeaders;
@@ -15,9 +16,11 @@ import org.springframework.stereotype.Component;
 public class LabJobConsumer {
 
   private final LabJobRecorder labJobRecorder;
+  private final DomainJobHandler domainJobHandler;
 
-  public LabJobConsumer(LabJobRecorder labJobRecorder) {
+  public LabJobConsumer(LabJobRecorder labJobRecorder, DomainJobHandler domainJobHandler) {
     this.labJobRecorder = labJobRecorder;
+    this.domainJobHandler = domainJobHandler;
   }
 
   @RabbitListener(queues = "${application.rabbitmq.queues.booking-confirm}")
@@ -27,6 +30,7 @@ public class LabJobConsumer {
       @Header(name = AmqpHeaders.RECEIVED_ROUTING_KEY, required = false) String routingKey,
       @Header(name = AmqpHeaders.CONSUMER_QUEUE, required = false) String queue) {
     record(job, exchange, queue, routingKey);
+    domainJobHandler.handle(job);
   }
 
   @RabbitListener(queues = "${application.rabbitmq.queues.email-send}")
@@ -36,6 +40,7 @@ public class LabJobConsumer {
       @Header(name = AmqpHeaders.RECEIVED_ROUTING_KEY, required = false) String routingKey,
       @Header(name = AmqpHeaders.CONSUMER_QUEUE, required = false) String queue) {
     record(job, exchange, queue, routingKey);
+    domainJobHandler.handle(job);
   }
 
   private void record(LabJobMessage job, String exchange, String queue, String routingKey) {

@@ -1,0 +1,24 @@
+<div th:fragment="runs">
+    <p th:if="${jobsDisabled}" class="muted">Jobs lab is disabled.</p>
+    <p th:if="${!jobsDisabled and #lists.isEmpty(jobRuns)}" class="muted">No job runs yet.</p>
+    <table th:if="${!jobsDisabled and !#lists.isEmpty(jobRuns)}" class="jobs-table">
+        <thead>
+        <tr>
+            <th>When</th>
+            <th>Type</th>
+            <th>Source</th>
+            <th>Status</th>
+            <th>Payload</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="run : ${jobRuns}">
+            <td th:text="${run.createdAt}">time</td>
+            <td><code th:text="${run.type}">email.send</code></td>
+            <td th:text="${run.source}">IMMEDIATE</td>
+            <td th:text="${run.status}">SUCCESS</td>
+            <td th:text="${#strings.abbreviate(run.payloadSnippet, 48)}">payload</td>
+        </tr>
+        </tbody>
+    </table>
+</div>

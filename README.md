@@ -77,6 +77,9 @@ curl http://localhost:8080/actuator/prometheus | head
 # Kafka dashboard
 open http://localhost:8080/ui/kafka
 
+# Jobs lab (scheduler + Redis delayed + RabbitMQ workers)
+open http://localhost:8080/ui/jobs
+
 # Elasticsearch hotel search (Thai/English)
 open http://localhost:8080/ui/search
 
@@ -337,8 +340,47 @@ curl http://localhost:8080/api/rabbitmq/playground/compare \
 
 Helper script: `bash api_manual_checks/seed_rabbitmq_lab.sh`
 
+### Jobs lab (scheduler + delayed queue)
+Laravel-style **queues** and **scheduler** inside `voyage-app` — Redis ZSET delayed jobs, `@Scheduled` poller/cron, RabbitMQ workers, HTMX workbench.
+
+| Path | What it is |
+|---|---|
+| `/ui/jobs` | Thymeleaf + HTMX workbench (admin JWT for enqueue/purge) |
+| `/api/jobs/playground` | Same actions via REST (ADMIN) |
+| `com.voyage.app.jobs` | `DelayedJobService`, `DelayedJobDispatcher`, `DomainJobPublisher`, `JobRun` history |
+
+Suggested learning path:
+
+1. `docker compose --profile app up -d`, start the app, open http://localhost:8080/ui/jobs, login as ADMIN.
+2. **Enqueue immediate** `email.send` — worker records a `JobRun`.
+3. **Enqueue delayed** (5s) — see the job in the Redis panel; after due time the poller publishes to RabbitMQ and the runs panel updates.
+4. Create a booking on [`/ui/bookings`](http://localhost:8080/ui/bookings) — with `application.jobs.async-notifications=true`, the confirmation notification is written by the RabbitMQ worker.
+5. Watch scheduler heartbeats (last poll / last cron cleanup).
+
+Quick API examples (admin bearer token):
+
+```bash
+# Immediate job
+curl -X POST http://localhost:8080/api/jobs/playground/enqueue-immediate \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"routingKey":"email.send","payload":"hello"}'
+
+# Delayed job (5 seconds)
+curl -X POST http://localhost:8080/api/jobs/playground/enqueue-delayed \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"routingKey":"email.send","payload":"later","delaySeconds":5}'
+
+# Pending delayed + recent runs + scheduler status
+curl http://localhost:8080/api/jobs/playground/delayed -H "Authorization: Bearer <ADMIN_TOKEN>"
+curl http://localhost:8080/api/jobs/playground/runs -H "Authorization: Bearer <ADMIN_TOKEN>"
+curl http://localhost:8080/api/jobs/playground/scheduler -H "Authorization: Bearer <ADMIN_TOKEN>"
+```
+
 ### Kafka & async messaging
 Phase 5 is implemented as a hotel event stream:
+
 
 ```text
 HotelService
@@ -779,6 +821,7 @@ This repo is structured to grow with the learning plan:
 - **Phase 4 (complete)** — Spring Security + JWT, ABAC roles (`CUSTOMER` / `HOTEL_MANAGER` / `ADMIN`), hotel SaaS plans, booking rate plans, mock payments
 - **Phase 5 (complete)** — Kafka producer/consumer + Thymeleaf event dashboard for hotel mutations
 - **Phase 6 (in progress)** — Redis-backed hotel caching + Redis playground for Strings, Hashes, Lists, Sets, Sorted Sets, TTL, Pub/Sub, and locks
+- **Jobs lab** — `/ui/jobs`: `@Scheduled` poller/cron, Redis delayed ZSET, RabbitMQ domain notification jobs
 - **Phase 7 (complete)** — `voyage-app/Dockerfile` (multi-stage) + full Kubernetes deployment in `k8s/`
 - **Phase 8 (complete)** — Spring AI hotel assistant: Gemini chat, embeddings, pgvector, RAG, tool calling, and an agent at `/ui/ai`
 - **Phase 9 (complete)** — Elasticsearch hotel search with Thai/English analyzers, HTMX UI, and i18n at `/ui/search`

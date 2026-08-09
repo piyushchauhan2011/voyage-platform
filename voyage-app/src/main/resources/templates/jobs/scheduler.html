@@ -1,0 +1,43 @@
+<div th:fragment="scheduler">
+    <p th:if="${jobsDisabled or scheduler == null}" class="muted">Scheduler unavailable.</p>
+    <dl th:if="${scheduler != null}" class="scheduler-dl">
+        <div>
+            <dt>Last poll</dt>
+            <dd th:text="${scheduler.lastPollAt() != null ? scheduler.lastPollAt() : '—'}">—</dd>
+        </div>
+        <div>
+            <dt>Dispatched last poll</dt>
+            <dd th:text="${scheduler.lastPollDispatched()}">0</dd>
+        </div>
+        <div>
+            <dt>Last cron cleanup</dt>
+            <dd th:text="${scheduler.lastCronAt() != null ? scheduler.lastCronAt() : '—'}">—</dd>
+        </div>
+        <div>
+            <dt>Deleted last cleanup</dt>
+            <dd th:text="${scheduler.lastCleanupDeleted()}">0</dd>
+        </div>
+        <div>
+            <dt>Redis delayed key</dt>
+            <dd><code th:text="${scheduler.delayedKey() != null ? scheduler.delayedKey() : 'n/a'}">voyage:delayed-jobs</code></dd>
+        </div>
+        <div>
+            <dt>Delayed pending</dt>
+            <dd th:text="${scheduler.delayedPending()}">0</dd>
+        </div>
+        <div>
+            <dt>Queue depths</dt>
+            <dd>
+                booking.confirm=<span th:text="${scheduler.bookingConfirmDepth()}">0</span>,
+                email.send=<span th:text="${scheduler.emailSendDepth()}">0</span>
+            </dd>
+        </div>
+        <div>
+            <dt>Backends</dt>
+            <dd>
+                Redis <span th:text="${scheduler.redisEnabled() ? 'on' : 'off'}">on</span>
+                · RabbitMQ <span th:text="${scheduler.rabbitEnabled() ? 'on' : 'off'}">on</span>
+            </dd>
+        </div>
+    </dl>
+</div>

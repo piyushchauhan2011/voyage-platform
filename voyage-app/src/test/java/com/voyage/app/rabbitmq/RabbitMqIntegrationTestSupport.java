@@ -16,7 +16,7 @@ import org.testcontainers.utility.DockerImageName;
  * <p>Uses a unique exchange/queue prefix so a running {@code spring-boot:run} app consuming {@code
  * voyage.jobs.*} cannot steal test messages.
  */
-abstract class RabbitMqIntegrationTestSupport {
+public abstract class RabbitMqIntegrationTestSupport {
 
   private static final String LAB_PREFIX = "voyage.jobs.test." + System.nanoTime();
   private static final boolean DOCKER_AVAILABLE = isDockerAvailable();

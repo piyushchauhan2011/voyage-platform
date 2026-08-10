@@ -142,11 +142,11 @@ GitHub Actions (`.github/workflows/ci.yml`) runs these on every push/PR to `main
 
 ### 4c. Local Jenkins (CI learning lab)
 
-Jenkins is **not** started by default. Use it to practice Pipeline jobs locally; GitHub Actions stays the source of truth for PRs.
+Jenkins is **not** started by default. Use it to practice Pipeline jobs locally; GitHub Actions stays the source of truth for PRs. The image is built from [`jenkins/`](jenkins/) and preinstalls the **Coverage** plugin for JaCoCo source highlighting.
 
 ```bash
-# Start only Jenkins (other services can already be up)
-docker compose --profile jenkins up -d jenkins
+# Build image (first time / after jenkins/ changes) and start Jenkins
+docker compose --profile jenkins up -d --build jenkins
 
 # Unlock password (first boot)
 docker exec voyage-jenkins cat /var/jenkins_home/secrets/initialAdminPassword
@@ -156,12 +156,15 @@ docker compose --profile jenkins stop jenkins
 ```
 
 1. Open http://localhost:8081 and paste the unlock password.
-2. Install **suggested plugins** (includes Pipeline).
+2. Install **suggested plugins** (includes Pipeline). The Coverage plugin is already in the image.
 3. Create an admin user, then **New Item → Pipeline**.
 4. Under **Pipeline** → Definition: *Pipeline script from SCM* → Git → your clone URL (GitHub remote, or a local `file:///path/to/voyage-platform` if the agent can read it) → Script Path `Jenkinsfile`.
 5. **Build Now**. The first run is slow (Maven deps + Testcontainers images); later builds reuse the Docker/Maven cache.
+6. Open the build (or job) → **Coverage** → drill into packages/classes for green/red line highlights and totals/trends. Unit-test JaCoCo only (Maven still enforces ≥40% lines).
 
-The root `Jenkinsfile` mirrors the GitHub Actions stages: parallel Quality / Unit tests / Integration tests, then Package.
+**Existing `jenkins-data` volume:** plugins from the image seed only a **new** Jenkins home. If you already ran the stock image, either install **Coverage** once under Manage Jenkins → Plugins, or stop Jenkins and remove only that volume (e.g. `docker volume rm voyage-platform_jenkins-data`) before `up --build` again.
+
+The root `Jenkinsfile` mirrors the GitHub Actions stages: parallel Quality / Unit tests / Integration tests, then Package; `post` publishes JaCoCo via `recordCoverage`.
 
 ### 5. Build everything
 

@@ -208,7 +208,8 @@ services:
   # Opt-in local CI lab — start with: docker compose --profile jenkins up -d jenkins
   jenkins:
     profiles: ["jenkins"]
-    image: jenkins/jenkins:lts-jdk21
+    build: ./jenkins
+    image: voyage-jenkins:local
     container_name: voyage-jenkins
     ports:
       - "8081:8080"

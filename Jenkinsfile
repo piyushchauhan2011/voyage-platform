@@ -66,6 +66,13 @@ pipeline {
   post {
     always {
       junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml,**/target/failsafe-reports/*.xml'
+      recordCoverage(
+        tools: [[parser: 'JACOCO', pattern: '**/target/site/jacoco/jacoco.xml']],
+        id: 'jacoco',
+        name: 'JaCoCo Coverage',
+        sourceCodeRetention: 'LAST_BUILD',
+        sourceDirectories: [[path: 'voyage-app/src/main/java']]
+      )
       archiveArtifacts artifacts: '**/target/site/jacoco/**,**/target/surefire-reports/**,**/target/failsafe-reports/**', allowEmptyArchive: true
     }
   }

@@ -85,10 +85,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           title: Unit test coverage
           update-comment: true
-          coverage-counter-type: LINE
           min-coverage-overall: 40
-          min-coverage-changed-lines: 40
-          show-missing-lines: true
+          min-coverage-changed-files: 40
+          debug-mode: true
 
       - name: Annotate uncovered changed lines
         if: always() && github.event_name == 'pull_request'
@@ -101,6 +100,7 @@ jobs:
           annotation-type: warning
           post-comment: false
           fail-on-threshold: false
+          show-uncovered: true
 
   integration-tests:
     name: Integration tests (Testcontainers)

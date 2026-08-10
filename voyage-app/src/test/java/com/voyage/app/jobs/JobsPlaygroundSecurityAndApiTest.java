@@ -57,19 +57,27 @@ class JobsPlaygroundSecurityAndApiTest extends RedisIntegrationTestSupport {
   @BeforeEach
   void setUp() {
     User admin =
-        userRepository.save(
-            new User(
-                "jobs-lab-admin",
-                "jobs-lab-admin@test.com",
-                passwordEncoder.encode("password123"),
-                Role.ADMIN));
+        userRepository
+            .findByUsername("jobs-lab-admin")
+            .orElseGet(
+                () ->
+                    userRepository.save(
+                        new User(
+                            "jobs-lab-admin",
+                            "jobs-lab-admin@test.com",
+                            passwordEncoder.encode("password123"),
+                            Role.ADMIN)));
     User customer =
-        userRepository.save(
-            new User(
-                "jobs-lab-customer",
-                "jobs-lab-customer@test.com",
-                passwordEncoder.encode("password123"),
-                Role.CUSTOMER));
+        userRepository
+            .findByUsername("jobs-lab-customer")
+            .orElseGet(
+                () ->
+                    userRepository.save(
+                        new User(
+                            "jobs-lab-customer",
+                            "jobs-lab-customer@test.com",
+                            passwordEncoder.encode("password123"),
+                            Role.CUSTOMER)));
     adminToken = "Bearer " + jwtService.generateToken(admin);
     customerToken = "Bearer " + jwtService.generateToken(customer);
   }

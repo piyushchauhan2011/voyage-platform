@@ -87,7 +87,6 @@ jobs:
           update-comment: true
           min-coverage-overall: 40
           min-coverage-changed-files: 40
-          debug-mode: true
 
       - name: Annotate uncovered changed lines
         if: always() && github.event_name == 'pull_request'

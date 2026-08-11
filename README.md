@@ -138,7 +138,7 @@ open http://localhost:8080/ui/ai
 ./mvnw test jacoco:report jacoco:check -pl voyage-app   # coverage (≥40% lines)
 ```
 
-GitHub Actions (`.github/workflows/ci.yml`) runs these on every push/PR to `main`: parallel **quality**, **unit-tests** (+ JaCoCo), and **integration-tests** (Docker/Testcontainers), then **package**.
+GitHub Actions (`.github/workflows/ci.yml`) runs these on every push/PR to `main`: parallel **quality**, **unit-tests** (+ JaCoCo), and **integration-tests** (Docker/Testcontainers), then **package**. On pull requests, the unit-tests job also posts a sticky **coverage comment** (overall + changed Java file %) and **annotates uncovered changed lines** on the Files tab when the diff includes `voyage-app` Java sources; docs/YAML-only PRs show overall coverage only. The hard gate remains JaCoCo ≥40% lines.
 
 ### 4c. Local Jenkins (CI learning lab)
 
